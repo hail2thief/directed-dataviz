@@ -1,6 +1,12 @@
 # directed-dataviz
 Directed reading on data visualization
 
+
+## Participants
+
+- Zeynep Onat
+
+
 ## Useful data sources
 
 - [Data is plural - Full archive](https://www.data-is-plural.com/archive/)

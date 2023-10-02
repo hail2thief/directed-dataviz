@@ -5,6 +5,7 @@ Directed reading on data visualization
 ## Participants
 
 - Zeynep Onat
+- Patrick Bernhard
 
 
 ## Useful data sources

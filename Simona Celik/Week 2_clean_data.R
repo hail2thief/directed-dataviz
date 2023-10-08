@@ -19,10 +19,10 @@ S2 <-read_csv("https://www.dropbox.com/scl/fi/80jngitqcrh8rcpb1fooq/Wave-7.xlsx-
 # Combine the to datasets by country code
 S3 <- left_join(S1, S2, by = 'B_COUNTRY')
 
-# Other vars you want to keep
+# Variables you want to keep
 vars_to_keep <- c("COUNTRY", "REGION", "CORRUPTION_INDEX", "GINI", "REGIME") 
 
-# Subset the columns you want to keep (vars_to_recode and vars_to_keep)
+# Subset the columns you want to keep (vars_to_keep)
 S3 <- S3[, c(vars_to_keep)]
 
 # Save clean data

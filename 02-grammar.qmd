@@ -1,0 +1,127 @@
+---
+title: "02-grammar-graphics"
+format: html
+editor: visual
+---
+
+```{r}
+# set knit options
+knitr::opts_chunk$set(
+  fig.width=9, 
+  fig.height=5, 
+  fig.retina=3,
+  fig.align="center",
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+## Overview
+
+Read libraries:
+
+```{r}
+library(tidyverse)
+library(gapminder)
+```
+
+Let's look at just one year of gapminder data:
+
+```{r}
+gap_07 = 
+  gapminder |> 
+  filter(year == 2007)
+```
+
+## Mapping aesthetics
+
+Make overall plot, where we map aesthetics globally:
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp, 
+                          size = pop, color = continent)) +
+  geom_point() + labs(x = "GDP per capita", y = "Life expectancy", 
+       title = "Global wealth and health in 2007") +
+  theme_bw()
+```
+
+
+When you map an aesthetic globally, two things are happening. The first is that all of the geometries you use (`geom_point()`, `geom_line()`, etc.) will **inherit** the aesthetic. The second is that you are allowing the aesthetic to **vary** in response to your variable (e.g., different colors for continents).
+
+
+
+
+Look what happens if we instead make aesthetics static:
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(size = 4, color = "orange", shape = 2)
+```
+
+
+
+You can also map aesthetics to specific geometries (notice here I switched back to original gapminder dataset). This allows you to map aesthetics to only one geometry. Notice how this allows the points and the smoothing line to have different aesthetics. 
+
+```{r}
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(aes(color = continent)) +
+  geom_smooth()
+```
+
+
+
+For contrast, look at what happens when I instead set everything globally. I get separate smoothing lines per continent:
+
+```{r}
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) + 
+  geom_point() +
+  geom_smooth()
+```
+
+
+
+## Highlighting observations
+
+One use case: to highlight specific observations or cases (in this case, we can barely see it)
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp,
+                             color = country == "Ethiopia")) + 
+  geom_point()
+
+```
+
+We can also provide each geometry with its own data. One use case, to label only the points we want to label.
+
+Here's the problem we are trying to solve -- I'd like to showcase Ethiopia in this plot. What happens if I label the points?
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp,
+                             color = country == "Ethiopia")) + 
+  geom_point() + 
+  geom_label(aes(label = country))
+```
+
+Here's the solution:
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point() + 
+  geom_label(data = filter(gap_07, country == "Ethiopia"), aes(label = country))
+```
+
+## Saving figures
+
+We can save our figures using `ggsave`. If we're working in an RStudio project, we can use relative file paths. PDFs are a good format since they can be more easily resized without distortion.
+
+```{r}
+ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point() + 
+  geom_label(data = filter(gap_07, country == "Ethiopia"), aes(label = country))
+
+ggsave(filename = "figures/ethiopia_gap.pdf")
+```

@@ -19,11 +19,18 @@ S2 <-read_csv("https://www.dropbox.com/scl/fi/80jngitqcrh8rcpb1fooq/Wave-7.xlsx-
 # Combine the to datasets by country code
 S3 <- left_join(S1, S2, by = 'B_COUNTRY')
 
-# Variables you want to keep
+# Variables to change
+vars_to_recode <- c("Q177", "Q178", "Q179", "Q180", "Q181", "Q222", "Q291G1", "Q284", "Q250", "Q260", "Q275R", "Q281", "Q288R", "X003R2") 
+
+# Recode values less than 0 to NA
+S3 <- S3 %>%
+  mutate(across(all_of(vars_to_recode), ~ ifelse(.x < 0, NA, .x)))
+
+# Other variables you want to keep
 vars_to_keep <- c("COUNTRY", "REGION", "CORRUPTION_INDEX", "GINI", "REGIME") 
 
-# Subset the columns you want to keep (vars_to_keep)
-S3 <- S3[, c(vars_to_keep)]
+# Subset the columns you want to keep (vars_to_recode and vars_to_keep)
+S3 <- S3[, c(vars_to_recode, vars_to_keep)]
 
 # Save clean data
 write_rds(S3, file = here("Simona Celik", "clean_data.rds"))

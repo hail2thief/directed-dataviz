@@ -1,0 +1,310 @@
+---
+title: "03: Amounts and proportions"
+---
+
+
+```{r setup, include=FALSE}
+# set knit options
+knitr::opts_chunk$set(
+  fig.width=9, 
+  fig.height=5, 
+  fig.retina=3,
+  fig.align="center",
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+
+```{r}
+library(tidyverse)
+library(scales)
+library(socviz)
+library(fivethirtyeight)
+library(juanr)
+library(gapminder)
+library(ggalt)
+```
+
+
+
+
+
+## Fixing axis labels
+
+
+The scales package has a function `label_wrap` for wrapping labels that are longer than some width.
+
+Look at the data:
+
+
+```{r}
+arm_rests = flying |> 
+  group_by(two_arm_rests) |> 
+  tally() |> 
+  drop_na()
+
+arm_rests
+```
+
+
+
+Without wrapping:
+
+```{r}
+ggplot(arm_rests, aes(y = two_arm_rests, x = n)) + geom_col(alpha = .8)
+```
+
+
+
+With wrapping:
+
+```{r}
+ggplot(arm_rests, aes(y = two_arm_rests, x = n)) + geom_col() + 
+  scale_y_discrete(label = label_wrap(20))
+```
+
+
+
+## Meaningful order of bars
+
+
+
+In order to order the categories of a plot (e.g., a barplot), `ggplot` uses the factor ordering of the variable. If the variable doesn't have a factor ordering, it converts it to one, which by default orders the variable values in alphabetical order.  
+
+
+For example:
+
+
+```{r}
+bonica_state = bonica |> 
+  group_by(state) |> 
+  summarise(total_receipts = sum(total_receipts))
+
+bonica_state
+```
+
+
+Default alphabetical ordering:
+
+
+```{r}
+ggplot(bonica_state, aes(y = state, x = total_receipts)) + 
+  geom_col()
+```
+
+
+In some cases, it is more useful to order the categories by **another variable**, such as the variable that defines the length of the bars. We can use `reorder` to do this within `ggplot`:
+
+
+```{r}
+ggplot(bonica_state, aes(y = reorder(state, total_receipts), x = total_receipts)) + 
+  geom_col()
+```
+
+
+In other cases, the variable has some internal order and we want the plot to reflect that. In this case, we can use the functions from `forcats` to create a factor variable with the order we want: 
+
+
+```{r}
+#socviz::edu$age |> unique()
+
+edu = edu |> 
+  mutate(age_cat = factor(age, levels = c("25-34", "35-54", "55>"))) |> 
+  # reverse so youngest shows up on top of graph
+  mutate(age_cat = fct_rev(age_cat))
+
+ggplot(edu, aes(y = age_cat, x = total, fill = sex)) + 
+  geom_col()
+```
+
+
+## Dodged bars
+
+
+By default, column or barplots are stacked:
+
+```{r}
+ggplot(edu, aes(y = age_cat, x = total, fill = sex)) + 
+  geom_col()
+```
+
+
+But unless the x-axis is a proportion that ends at 100%, this is hard to read. Better to dodge the bars so they're side by side: 
+
+
+```{r}
+ggplot(edu, aes(y = age_cat, x = total, fill = sex)) + 
+  geom_col(position = "dodge")
+```
+
+
+
+## Dot plots
+
+Dot plots we've seen, they don't start at 0 by default:
+
+```{r}
+gap_07 = gapminder |> 
+  filter(year == 2007, continent == "Americas")
+
+ggplot(gap_07, aes(y = reorder(country, lifeExp), x = lifeExp)) + geom_point()
+```
+
+
+
+## Lollipop charts
+
+
+Lollipop charts use points and segments. There's different ways to make one. One approach is with `geom_pointrange`, setting xmin to 0 and xmax to the amount:
+
+
+```{r}
+gap_07 = gapminder |> 
+  filter(year == 2007, continent == "Americas")
+
+ggplot(gap_07, aes(y = country, x = lifeExp, xmin = 0, xmax = lifeExp)) + 
+  geom_pointrange()
+```
+
+
+
+The `ggalt` package has a lollipop geometry with an annoying syntax. Category has to go on `x`, amount on `y`. To get categories on y-axis you have to use `coord_flip`. 
+
+```{r}
+gap_07 = gapminder |> 
+  filter(year == 2007, continent == "Americas")
+
+ggplot(gap_07, aes(x = country, y = lifeExp)) + 
+  geom_lollipop() + 
+  coord_flip()
+```
+
+
+<!-- ## Slope charts -->
+
+<!-- One way of showing change from period to the next is a slope graph. For this, we need data that has a starting point and end point, as below: -->
+
+<!-- ```{r} -->
+<!-- change_gap = gapminder |>  -->
+<!--   filter(year == min(year) | year == max(year)) |>  -->
+<!--   filter(country %in% c("Haiti", "Germany", "South Korea", "Brazil", -->
+<!--                         "France", "Afghanistan", "Romania")) |>  -->
+<!--   select(country, year, lifeExp) |>  -->
+<!--   # year has to be a factor ggplot understands it's a "category" -->
+<!--   mutate(year = factor(year)) -->
+
+<!-- change_gap -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- ggplot(change_gap, aes(x = year, y = lifeExp, group = country, color = country)) +  -->
+<!--   geom_line(size = 2) -->
+<!-- ``` -->
+
+
+
+<!-- ## Dumbbell charts -->
+
+
+<!-- Dumbbell charts require data to be **wide**, meaning that there is only one row for each country and the values of life expectancy for each year are their own column. Like so: -->
+
+
+<!-- ```{r} -->
+<!-- wide_gap = change_gap |>  -->
+<!--   pivot_wider(names_from = year, values_from = lifeExp) -->
+<!-- wide_gap -->
+<!-- ``` -->
+
+
+<!-- The `ggalt` package has a dumbbell geometry. Notice it requires both a starting and end point for the x-axis.  -->
+
+
+<!-- ```{r} -->
+<!-- ggplot(wide_gap, aes(y = country, x = `1952`, xend = `2007`)) +  -->
+<!--   geom_dumbbell(linewidth = 3) -->
+<!-- ``` -->
+
+
+## Stacked charts
+
+Stacked charts are nice when displaying proportions that add up to 100%. For example:
+
+
+```{r}
+crime_tab = crime |> 
+  group_by(pais, aoj12) |> 
+  tally() |> 
+  drop_na() |> 
+  mutate(percent = n / sum(n))
+
+crime_tab
+```
+
+```{r}
+ggplot(crime_tab, aes(y = pais, x = percent, fill = aoj12)) + 
+  geom_col(width = 1, color = "white") + 
+  theme(legend.position = "top") + 
+  scale_fill_viridis_d(option = "mako") + 
+  # to get rid of space between 0 and labels
+  coord_cartesian(xlim = c(0, 1), expand = FALSE)
+```
+
+
+## facet wrap
+
+
+Another alternative is to use facet_wrap to create mini panels:
+
+```{r}
+ggplot(crime_tab, aes(y = aoj12, x = percent)) + 
+  geom_col(width = 1, color = "white") + 
+  facet_wrap(vars(pais))
+```
+
+
+
+
+
+## Heat map
+
+
+Heat maps use the fill aesthetic. Here's a good place to try out a custom fill scale. 
+
+```{r}
+life_year = gapminder |> 
+  group_by(year, continent) |> 
+  summarise(lifeExp = mean(lifeExp, na.rm = TRUE))
+
+life_year
+```
+
+
+```{r}
+ggplot(life_year, aes(x = year, y = continent, fill = lifeExp)) + 
+  geom_tile() + 
+  scale_fill_viridis_c(option = "mako") + 
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+
+
+
+## Patrick's question
+
+
+```{r}
+gap_07 = gapminder |> 
+  filter(year == 2007)
+
+
+ggplot(gap_07, aes(x = continent, y = lifeExp, fill = country)) + 
+  geom_col(position = "dodge") + 
+  theme(legend.position = "none")
+```
+

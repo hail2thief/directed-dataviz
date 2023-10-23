@@ -29,5 +29,6 @@ ggplot(data = trade_year, aes(x= exports, y=imports, size=pop, color=gdp, label=
 #Exclude top three countries with extreme imports/exports and replot
 
 trade_year <- trade_year[trade_year$exports<=700000, ]
-ggplot(data = trade_year, aes(x= exports, y=imports, size=pop, color=gdp, label=country)) + geom_point()  + geom_text() + labs(x="Export", y="GDP", title="Worldwide Export vs Imports 2010") + theme_linedraw()
+ggplot(data = trade_year, aes(x= exports, y=imports, size=pop, color=gdp, label=country)) + geom_point()  + geom_text() + labs(x="Export", y="Import", title="Worldwide Export vs Imports 2010") + theme_linedraw()
+
 

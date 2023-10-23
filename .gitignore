@@ -34,3 +34,4 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 02-grammar_files
+.DS_Store

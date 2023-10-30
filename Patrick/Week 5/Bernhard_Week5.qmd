@@ -1,0 +1,112 @@
+---
+title: "Bernhard_Week5"
+format: html
+editor: visual
+---
+
+## Week 5 Assignment
+
+Tasks: make scatterplot, correlogram, time series, multiple time series
+
+## Loading Data
+
+For the purposes of this assignment, I will use the "conflict" dataset from the 'juanr' package.
+
+```{r}
+devtools::install_github("hail2thief/juanr")
+```
+
+```{r}
+library(juanr)
+data("conflict")
+```
+
+## Plots
+
+### Scatterplot
+
+Now that the proper dataset has been loaded, let's visualize!
+
+```{r}
+library(ggplot2)
+
+plot <- ggplot(conflict, aes(x = gdp, y = milex, color = factor(onset))) + 
+  geom_point(alpha = 0.7) + 
+  scale_x_log10(labels = scales::comma, breaks = scales::trans_breaks("log10", function(x) 10^x)) +
+  scale_y_log10(labels = scales::comma, breaks = scales::trans_breaks("log10", function(x) 10^x)) +
+  scale_color_manual(values = c("0" = "blue", "1" = "red"), name = "Conflict Onset") +
+  labs(title = "GDP vs. Military Expenditure (Log Scales)",
+       x = "GDP (Log Scale)",
+       y = "Military Expenditure (Log Scale)") +
+  theme_minimal()
+
+print(plot)
+```
+
+### Correlogram
+
+Before I produce my correlogram plot, let's first compute a correlation matrix with all the continuous variables in the dataset.
+
+```{r}
+cor_matrix <- cor(conflict[,c("imports", "exports", "milex", "milper", "gdp", "pop")], use = "complete.obs")
+
+```
+
+Now that I've computed my correlation matrix representing the continuous variables in the 'conflict' dataset, I can begin the process of visualizing these correlations.
+
+```{r}
+library(corrplot)
+
+corrplot(cor_matrix, method = "color", type = "upper", 
+         order = "hclust", tl.col = "black", tl.srt = 45)
+
+
+```
+
+The above plot shows a visual depiction of correlations between the continuous variables of Interest. Blue indicates a positive correlation, and red indicates a negative relationship. As you can see above, only positive correlations are represented within these data. Imports and Export variables are highly correlated, which makes intuitive sense. Secondarily, imports and GDP also show a high correlation level when compared to the rest of the variable interactions.
+
+### Time Series
+
+Let's turn our attention to the individual time series plot. Here, I'll use a time series plot to demonstrate a comparison in GDP growth between the United States and China.
+
+```{r}
+# Filter the data for the countries of interest
+df_subset <- conflict[conflict$country %in% c("United States of America", "China"), ]
+
+# Create the time series plot
+plot <- ggplot(df_subset, aes(x = year, y = gdp, color = country)) +
+  geom_line() +
+  labs(title = "GDP over Time for USA and China",
+       x = "Year",
+       y = "GDP") +
+  theme_minimal()
+
+print(plot)
+
+```
+
+### Multiple Time Series
+
+Last, I'll produce a multiple time series plot. For the purposes of this plot, I subset the data to just the United States. I then melt the variables of interest (gdp, milex \[military expenditure\], and imports) and plot them. Because all three variables appear to be scaled differently, I plot the three variables over time separately.
+
+```{r}
+library(reshape2)  # For melting the data into a long format
+
+# Filter the data for the country of interest
+df_subset <- conflict[conflict$country == "United States of America", ]
+
+# Melt the data into a long format for easy plotting
+df_melted <- melt(df_subset, id.vars = "year", measure.vars = c("gdp", "milex", "imports"))
+
+# Create the faceted time series plot
+plot <- ggplot(df_melted, aes(x = year, y = value)) +
+  geom_line() +
+  facet_wrap(~ variable, scales = "free_y") +  # This creates separate plots for each variable
+  labs(title = "Time Series for USA",
+       x = "Year",
+       y = "Value") +
+  theme_minimal()
+
+print(plot)
+
+```

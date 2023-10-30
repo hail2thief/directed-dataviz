@@ -59,6 +59,13 @@ ggplot(gapminder, aes(x = lifeExp)) + geom_histogram(color = "white")
 ```
 
 
+Facet wrap:
+
+```{r}
+ggplot(gapminder, aes(x = lifeExp)) + geom_histogram(color = "white") + facet_wrap(vars(year))
+```
+
+
 
 ## Density graph
 

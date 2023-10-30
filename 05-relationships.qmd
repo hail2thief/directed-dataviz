@@ -1,0 +1,207 @@
+---
+title: "05-relationships"
+format: html
+editor: visual
+---
+
+```{r setup, include=FALSE}
+# set knit options
+knitr::opts_chunk$set(
+  fig.width=9, 
+  fig.height=5, 
+  fig.retina=3,
+  fig.align="center",
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+Load libraries:
+
+```{r}
+library(tidyverse)
+library(juanr)
+library(gapminder)
+```
+
+## scatterplots
+
+Look at elections data:
+
+```{r}
+elections
+```
+
+Easy to make:
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016)) + geom_point()
+```
+
+Can add a smoothing line:
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016)) + geom_point() + 
+  geom_smooth()
+```
+
+To fit a straight line (OLS):
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016)) + geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+In some cases, the points look better (maybe) if you make them "hollow" (shape), fill them with a color, and then color the outside "white":
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016)) + geom_point(shape = 21, 
+                                                                     color = "white",
+                                                                     fill = "black",
+                                                                     size = 3)
+```
+
+You can map colors to the points:
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016, color = census_region)) + 
+  geom_point() + 
+  scale_color_viridis_d(option = "magma")
+```
+
+If you do this with a smoothing line, the line will inherit the aesthetic mapping. This allows you to portray patterns across groups:
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016, color = census_region)) + 
+  geom_point() + 
+  scale_color_viridis_d(option = "magma") + 
+  geom_smooth(method = "lm")
+```
+
+Better:
+
+```{r}
+ggplot(elections, aes(x = hh_income, y = per_dem_2016, color = census_region)) + 
+  geom_point() + 
+  scale_color_viridis_d(option = "magma") + 
+  geom_smooth(method = "lm") +
+  facet_wrap(vars(census_region))
+```
+
+## Correlograms
+
+Correlograms only make sense for continuous variables. We can make them using `ggcorrplot`:
+
+```{r}
+elections |> 
+  # pick just numeric variables
+  select(where(is.double)) |> 
+  # get correlation matrix
+  cor(use = "complete.obs") |> 
+  ggcorrplot::ggcorrplot()
+```
+
+## Slope charts
+
+One way of showing change from period to the next is a slope graph. For this, we need data that has a starting point and end point, as below:
+
+```{r}
+change_gap = gapminder |>
+  filter(year == min(year) | year == max(year)) |>
+  filter(country %in% c("Haiti", "Germany", "South Korea", "Brazil",
+                        "France", "Afghanistan", "Romania", 
+                        "Zimbabwe")) |>
+  select(country, year, lifeExp) |>
+  # year has to be a factor ggplot understands it's a "category"
+  mutate(year = factor(year))
+
+change_gap
+```
+
+```{r}
+ggplot(change_gap, aes(x = year, y = lifeExp, group = country, color = country)) +
+  geom_line(size = 2)
+```
+
+## Dumbbell charts
+
+Dumbbell charts require data to be **wide**, meaning that there is only one row for each country and the values of life expectancy for each year are their own column. Like so:
+
+```{r}
+wide_gap = change_gap |>
+  pivot_wider(names_from = year, values_from = lifeExp)
+wide_gap
+```
+
+The `ggalt` package has a dumbbell geometry. Notice it requires both a starting and end point for the x-axis.
+
+```{r}
+ggplot(wide_gap, aes(y = reorder(country, `2007`), x = `1952`, xend = `2007`)) +
+  ggalt::geom_dumbbell(linewidth = 3, size = 2, 
+                       color = "orange",
+                       colour_x = "red", 
+                       colour_xend = "blue")
+```
+
+## Time series
+
+Prison data:
+
+```{r}
+prison
+```
+
+Time series put time on the x-axis. They are better when you observe a variable *a lot*:
+
+```{r}
+prison |> 
+  filter(state == "California") |> 
+  ggplot(aes(x = date, y = incarcerated_total)) + geom_line()
+```
+
+An alternative is an area chart, although I'm not sure why it looks weird?
+
+```{r}
+prison |> 
+  filter(state == "California") |> 
+  ggplot(aes(x = date, y = incarcerated_total)) + geom_area()
+```
+
+If observing multiple units moving over time, can use color or group aesthetic to separate lines.
+
+Using color:
+
+```{r}
+
+ggplot(prison, aes(x = date, y = incarcerated_total, color = state)) + geom_line()
+```
+
+Using group:
+
+```{r}
+
+ggplot(prison, aes(x = date, y = incarcerated_total, group = state)) + geom_line()
+```
+
+Better to facet:
+
+```{r}
+prison |> 
+  filter(state %in% c("California", "Arizona", "Florida", 
+                      "Georgia")) |> 
+ggplot(aes(x = date, y = incarcerated_total, group = state)) + geom_line() + 
+  facet_wrap(vars(state))
+```
+
+Adding points might is more "honest" when you have few time points:
+
+```{r}
+gapminder |> 
+  filter(year >= 2000, country %in% c("Canada", "Cambodia")) |> 
+  ggplot(aes(x = year, y = gdpPercap, color = country)) + geom_line() + 
+  geom_point()
+```

@@ -64,5 +64,5 @@ Mod4 <- lm(per_dem_2020 ~ black + white + female, data = elections)
 
 Mods <- list(Mod1, Mod3, Mod4)
 
-modelsummary(Mods)
+modelsummary(Mods, stars = TRUE)
 

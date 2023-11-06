@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>06-models</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="06-models_files/libs/clipboard/clipboard.min.js"></script>
+<script src="06-models_files/libs/quarto-html/quarto.js"></script>
+<script src="06-models_files/libs/quarto-html/popper.min.js"></script>
+<script src="06-models_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="06-models_files/libs/quarto-html/anchor.min.js"></script>
+<link href="06-models_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="06-models_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="06-models_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="06-models_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="06-models_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+<script src="06-models_files/libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="06-models_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">06-models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>Load libraries:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(juanr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gapminder)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modelsummary)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stargazer)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_light</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I’m gonna look at the elections dataset, and I’ll create a dummy variable that tells me who won each county:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>elections <span class="ot">=</span> elections <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make vote share a percent instead of proportion</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">per_dem_2020 =</span> per_dem_2020 <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">per_gop_2020 =</span> per_gop_2020 <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># created a binary DV</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dems_win_20 =</span> <span class="fu">ifelse</span>(per_dem_2020 <span class="sc">&gt;</span> per_gop_2020, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make income in tens of thousands of dollars</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hh_income =</span> hh_income <span class="sc">/</span> <span class="dv">10000</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>elections <span class="sc">|&gt;</span> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, state, census_region, per_dem_2020, dems_win_20, black, hh_income, travel_time)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3,152 × 8
+   name            state census_region per_dem_2020 dems_win_20 black hh_income
+   &lt;chr&gt;           &lt;chr&gt; &lt;chr&gt;                &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Autauga County  AL    South                27.0            0  18.4      5.37
+ 2 Baldwin County  AL    South                22.4            0   9.5      5.02
+ 3 Barbour County  AL    South                45.8            0  47.6      3.29
+ 4 Bibb County     AL    South                20.7            0  22.1      3.64
+ 5 Blount County   AL    South                 9.57           0   1.8      4.41
+ 6 Bullock County  AL    South                74.7            1  69.9      3.20
+ 7 Butler County   AL    South                41.8            0  43.6      2.99
+ 8 Calhoun County  AL    South                29.8            0  20.9      4.00
+ 9 Chambers County AL    South                41.6            0  39.1      3.24
+10 Cherokee County AL    South                13.2            0   4.5      3.49
+# ℹ 3,142 more rows
+# ℹ 1 more variable: travel_time &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>I’ll fit three models: a model with all linear terms; a model with an interaction; a logit model.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mod_ols <span class="ot">=</span> <span class="fu">lm</span>(per_dem_2020 <span class="sc">~</span>  black <span class="sc">+</span> travel_time <span class="sc">+</span> hh_income <span class="sc">+</span> census_region, </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> elections)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>mod_inter <span class="ot">=</span> <span class="fu">lm</span>(per_dem_2020 <span class="sc">~</span> black <span class="sc">+</span> travel_time <span class="sc">+</span> hh_income <span class="sc">+</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                 census_region <span class="sc">+</span> black <span class="sc">*</span> census_region, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> elections)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>mod_logit <span class="ot">=</span> <span class="fu">glm</span>(dems_win_20 <span class="sc">~</span> black <span class="sc">+</span> travel_time <span class="sc">+</span> hh_income <span class="sc">+</span> census_region,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> elections, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">"logit"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I like using <code>broom::tidy</code> to look at output since it converts output to a table:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(mod_ols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 5
+  term                   estimate std.error statistic  p.value
+  &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             10.9       1.19        9.17 8.29e-20
+2 black                    0.753     0.0169     44.5  0       
+3 travel_time             -0.0901    0.0434     -2.08 3.78e- 2
+4 hh_income                4.07      0.195      20.9  1.58e-90
+5 census_regionNortheast  11.8       0.900      13.1  4.62e-38
+6 census_regionSouth      -6.67      0.563     -11.9  9.03e-32
+7 census_regionWest        7.62      0.678      11.2  1.02e-28</code></pre>
+</div>
+</div>
+<p>I can manipulate table however I want, for example, which estimates are statistically significant at <span class="math inline">\(p &lt; .05\)</span>?</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(mod_ols) <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p.value <span class="sc">&lt;</span> .<span class="dv">05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 5
+  term                   estimate std.error statistic  p.value
+  &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             10.9       1.19        9.17 8.29e-20
+2 black                    0.753     0.0169     44.5  0       
+3 travel_time             -0.0901    0.0434     -2.08 3.78e- 2
+4 hh_income                4.07      0.195      20.9  1.58e-90
+5 census_regionNortheast  11.8       0.900      13.1  4.62e-38
+6 census_regionSouth      -6.67      0.563     -11.9  9.03e-32
+7 census_regionWest        7.62      0.678      11.2  1.02e-28</code></pre>
+</div>
+</div>
+<p>A useful tip in these cases is to create a variable dictionary, with the “dirty” variable name and the “clean” one you want to use:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dict <span class="ot">=</span> <span class="fu">tribble</span>(<span class="sc">~</span>dirty, <span class="sc">~</span>clean,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"(Intercept)"</span>, <span class="st">"Intercept"</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">"black"</span>, <span class="st">"Black % of population"</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"travel_time"</span>, <span class="st">"Average commute time to work"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">"hh_income"</span>, <span class="st">"Median household income"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"census_regionNortheast"</span>, <span class="st">"Northeast"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>               <span class="st">"census_regionSouth"</span>, <span class="st">"South"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>               <span class="st">"census_regionWest"</span>, <span class="st">"West"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>               <span class="st">"black:census_regionNortheast"</span>, <span class="st">"Black % X Northeast"</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>               <span class="st">"black:census_regionSouth"</span>, <span class="st">"Black % X South"</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>               <span class="st">"black:census_regionWest"</span>, <span class="st">"Black % X West"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I can then use this dictionary to merge into my model output and get clean labels:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mod_inter <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(dict, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"term"</span> <span class="ot">=</span> <span class="st">"dirty"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 6
+   term                         estimate std.error statistic  p.value clean     
+   &lt;chr&gt;                           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;     
+ 1 (Intercept)                    11.0      1.20        9.23 5.02e-20 Intercept 
+ 2 black                           1.28     0.0760     16.9  3.26e-61 Black % o…
+ 3 travel_time                    -0.131    0.0430     -3.04 2.40e- 3 Average c…
+ 4 hh_income                       3.94     0.193      20.4  3.95e-87 Median ho…
+ 5 census_regionNortheast         12.2      1.09       11.3  6.00e-29 Northeast 
+ 6 census_regionSouth             -4.55     0.613      -7.43 1.43e-13 South     
+ 7 census_regionWest               6.05     0.817       7.40 1.71e-13 West      
+ 8 black:census_regionNortheast   -0.327    0.133      -2.47 1.37e- 2 Black % X…
+ 9 black:census_regionSouth       -0.569    0.0779     -7.31 3.35e-13 Black % X…
+10 black:census_regionWest         1.36     0.288       4.73 2.29e- 6 Black % X…</code></pre>
+</div>
+</div>
+<section id="displaying-model-results-the-table" class="level2">
+<h2 class="anchored" data-anchor-id="displaying-model-results-the-table">Displaying model results: the table</h2>
+<p>The table is the classic way. <code>modelsummary</code> is nice for this. Need a list of models to feed the function. Also very “customizable.” with what statistics to report.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">=</span> <span class="fu">list</span>(<span class="st">"OLS"</span> <span class="ot">=</span> mod_ols, </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>              <span class="st">"Interaction model"</span> <span class="ot">=</span> mod_inter,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>              <span class="st">"Logit model"</span> <span class="ot">=</span> mod_logit)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(models, <span class="at">stars =</span> <span class="cn">TRUE</span>, <span class="at">gof_map =</span> <span class="st">"nobs"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">OLS</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">&nbsp;Interaction model</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Logit model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: center;">10.913***</td>
+<td style="text-align: center;">11.041***</td>
+<td style="text-align: center;">−5.161***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(1.190)</td>
+<td style="text-align: center;">(1.197)</td>
+<td style="text-align: center;">(0.327)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">black</td>
+<td style="text-align: center;">0.753***</td>
+<td style="text-align: center;">1.283***</td>
+<td style="text-align: center;">0.126***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.017)</td>
+<td style="text-align: center;">(0.076)</td>
+<td style="text-align: center;">(0.006)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">travel_time</td>
+<td style="text-align: center;">−0.090*</td>
+<td style="text-align: center;">−0.131**</td>
+<td style="text-align: center;">−0.071***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.043)</td>
+<td style="text-align: center;">(0.043)</td>
+<td style="text-align: center;">(0.013)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">hh_income</td>
+<td style="text-align: center;">4.075***</td>
+<td style="text-align: center;">3.943***</td>
+<td style="text-align: center;">0.765***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.195)</td>
+<td style="text-align: center;">(0.193)</td>
+<td style="text-align: center;">(0.055)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">census_regionNortheast</td>
+<td style="text-align: center;">11.768***</td>
+<td style="text-align: center;">12.241***</td>
+<td style="text-align: center;">1.941***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.900)</td>
+<td style="text-align: center;">(1.085)</td>
+<td style="text-align: center;">(0.203)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">census_regionSouth</td>
+<td style="text-align: center;">−6.674***</td>
+<td style="text-align: center;">−4.550***</td>
+<td style="text-align: center;">−1.352***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.563)</td>
+<td style="text-align: center;">(0.613)</td>
+<td style="text-align: center;">(0.218)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">census_regionWest</td>
+<td style="text-align: center;">7.616***</td>
+<td style="text-align: center;">6.046***</td>
+<td style="text-align: center;">1.742***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.678)</td>
+<td style="text-align: center;">(0.817)</td>
+<td style="text-align: center;">(0.167)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">black × census_regionNortheast</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">−0.327*</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">(0.133)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">black × census_regionSouth</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">−0.569***</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">(0.078)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">black × census_regionWest</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">1.361***</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">(0.288)</td>
+<td style="text-align: center; box-shadow: 0px 1.5px;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Num.Obs.</td>
+<td style="text-align: center;">3111</td>
+<td style="text-align: center;">3111</td>
+<td style="text-align: center;">3111</td>
+</tr>
+</tbody><tfoot>
+<tr class="even">
+<td style="text-align: left; padding: 0;"><sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt; 0.001</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+</tfoot>
+
+</table>
+
+
+</div>
+</div>
+<p>You can also feed it clean variable names from your dictionary using the <code>coef_map</code> argument. A nice trick here is that it accepts a named vector, and that <code>deframe</code> will convert a dataframe t a named vector:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>named_coefs <span class="ot">=</span> <span class="fu">deframe</span>(dict)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(models, <span class="at">stars =</span> <span class="cn">TRUE</span>, <span class="at">gof_map =</span> <span class="st">"nobs"</span>, <span class="at">coef_map =</span> named_coefs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">OLS</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">&nbsp;Interaction model</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Logit model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: center;">10.913***</td>
+<td style="text-align: center;">11.041***</td>
+<td style="text-align: center;">−5.161***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(1.190)</td>
+<td style="text-align: center;">(1.197)</td>
+<td style="text-align: center;">(0.327)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Black % of population</td>
+<td style="text-align: center;">0.753***</td>
+<td style="text-align: center;">1.283***</td>
+<td style="text-align: center;">0.126***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.017)</td>
+<td style="text-align: center;">(0.076)</td>
+<td style="text-align: center;">(0.006)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Average commute time to work</td>
+<td style="text-align: center;">−0.090*</td>
+<td style="text-align: center;">−0.131**</td>
+<td style="text-align: center;">−0.071***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.043)</td>
+<td style="text-align: center;">(0.043)</td>
+<td style="text-align: center;">(0.013)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Median household income</td>
+<td style="text-align: center;">4.075***</td>
+<td style="text-align: center;">3.943***</td>
+<td style="text-align: center;">0.765***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.195)</td>
+<td style="text-align: center;">(0.193)</td>
+<td style="text-align: center;">(0.055)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Northeast</td>
+<td style="text-align: center;">11.768***</td>
+<td style="text-align: center;">12.241***</td>
+<td style="text-align: center;">1.941***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.900)</td>
+<td style="text-align: center;">(1.085)</td>
+<td style="text-align: center;">(0.203)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">South</td>
+<td style="text-align: center;">−6.674***</td>
+<td style="text-align: center;">−4.550***</td>
+<td style="text-align: center;">−1.352***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.563)</td>
+<td style="text-align: center;">(0.613)</td>
+<td style="text-align: center;">(0.218)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">West</td>
+<td style="text-align: center;">7.616***</td>
+<td style="text-align: center;">6.046***</td>
+<td style="text-align: center;">1.742***</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.678)</td>
+<td style="text-align: center;">(0.817)</td>
+<td style="text-align: center;">(0.167)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Black % X Northeast</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">−0.327*</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">(0.133)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Black % X South</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">−0.569***</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">(0.078)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Black % X West</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">1.361***</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">(0.288)</td>
+<td style="text-align: center; box-shadow: 0px 1.5px;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Num.Obs.</td>
+<td style="text-align: center;">3111</td>
+<td style="text-align: center;">3111</td>
+<td style="text-align: center;">3111</td>
+</tr>
+</tbody><tfoot>
+<tr class="even">
+<td style="text-align: left; padding: 0;"><sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt; 0.001</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+</tfoot>
+
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="displaying-model-results-coefficient-plot" class="level2">
+<h2 class="anchored" data-anchor-id="displaying-model-results-coefficient-plot">Displaying model results: coefficient plot</h2>
+<p>We can display coefficients in a plot using the <code>geom_pointrange</code> geometry. Here’s another situation where <code>tidy()</code> is useful:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>plot_model <span class="ot">=</span> <span class="fu">tidy</span>(mod_ols, <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> <span class="fu">left_join</span>(dict, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"term"</span> <span class="ot">=</span> <span class="st">"dirty"</span>))</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_model, <span class="fu">aes</span>(<span class="at">y =</span> clean, <span class="at">x =</span> estimate, <span class="at">xmin =</span> conf.low, <span class="at">xmax =</span> conf.high)) <span class="sc">+</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointrange</span>() <span class="sc">+</span> </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add vertical line at zero</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span> </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>These plots are very hard to get right. The problem is that the explanatory variables are all on different scales, so they make the coefficients hard to see. All of the coefficients above are <span class="math inline">\(p &lt; .05\)</span>, but it doesn’t look like it.</p>
+<p>One thing to do is drop the (giant) intercept:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>plot_model <span class="ot">=</span> <span class="fu">tidy</span>(mod_ols, <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_model, <span class="fu">aes</span>(<span class="at">y =</span> term, <span class="at">x =</span> estimate, <span class="at">xmin =</span> conf.low, <span class="at">xmax =</span> conf.high)) <span class="sc">+</span> </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointrange</span>() <span class="sc">+</span> </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add vertical line at zero</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span> </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Another thing to do is to <strong>standardize</strong> the variables so that they are on the same scale: an increase of one unit for each = an increase of one standard deviation in the outcome.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>elections_scale <span class="ot">=</span> elections <span class="sc">|&gt;</span> </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale all the numeric variables</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), scale))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>mod_ols_scale <span class="ot">=</span> <span class="fu">lm</span>(per_dem_2020 <span class="sc">~</span> pop <span class="sc">+</span> female <span class="sc">+</span> black <span class="sc">+</span> travel_time <span class="sc">+</span> hh_income <span class="sc">+</span> census_region, <span class="at">data =</span> elections_scale)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>plot_model <span class="ot">=</span> <span class="fu">tidy</span>(mod_ols_scale, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_model, <span class="fu">aes</span>(<span class="at">y =</span> term, <span class="at">x =</span> estimate, <span class="at">xmin =</span> conf.low, <span class="at">xmax =</span> conf.high)) <span class="sc">+</span> </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointrange</span>() <span class="sc">+</span> </span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add vertical line at zero</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span> </span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can also combine multiple models using <code>tidy</code>, but need to create a variable to keep track of which is which. Then we bind the tables together.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>plot_ols <span class="ot">=</span> mod_ols <span class="sc">|&gt;</span> </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>(<span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"OLS"</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>plot_logit <span class="ot">=</span> mod_logit <span class="sc">|&gt;</span> </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>(<span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"Logit"</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(plot_ols, plot_logit) <span class="sc">|&gt;</span> </span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> term, <span class="at">x =</span> estimate, <span class="at">xmin =</span> conf.low, <span class="at">xmax =</span> conf.high,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> model)) <span class="sc">+</span> </span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointrange</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.5</span>)) <span class="sc">+</span> </span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add vertical line at zero</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span> </span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Same problems as before we would have to deal with. Honestly, I think these kind of plots are more trouble than they’re worth.</p>
+</section>
+<section id="marginal-effects-linear-models" class="level2">
+<h2 class="anchored" data-anchor-id="marginal-effects-linear-models">Marginal effects (linear models)</h2>
+<p>Most of the times we don’t care about all of these coefficients, we actually care about just one (our treatment variable). The rest are controls that have no causal interpretation.</p>
+<p>With OLS, it’s simple, the marginal effect of <code>black</code> is the first derivative of <code>per_dem_share</code> with respect to <code>black</code>, which is just the <span class="math inline">\(\beta\)</span> coefficient for <code>black</code></p>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{\widehat{per\_dem\_2020}} &amp;= 10.91 + 0.75(\operatorname{black}) - 0.09(\operatorname{travel\_time}) + 4.07(\operatorname{hh\_income})\ + \\
+&amp;\quad 11.77(\operatorname{census\_region}_{\operatorname{Northeast}}) - 6.67(\operatorname{census\_region}_{\operatorname{South}}) + 7.62(\operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+\]</span></p>
+<p>So the marginal effect of the percent of the black population on Democratic vote share is .75 <span class="math inline">\(\rightarrow\)</span> for every percent increase in the Black population, Democratic vote share increases by .75%.</p>
+<section id="plotting-substantive-effects" class="level3">
+<h3 class="anchored" data-anchor-id="plotting-substantive-effects">Plotting substantive effects</h3>
+<p>A nice way to convey effect magnitudes is to derive predicted values of our outcome as the variable we care about varies, holding all else constant. Three steps to this:</p>
+<ol type="1">
+<li>fit the model</li>
+<li>define a scenario where our key variable varies and everything else is held at some meaningful constant value, like the mean</li>
+<li>plug the scenario into the model to get the estimate</li>
+</ol>
+<p>We can do (2) using <code>crossing</code>:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>avg_county <span class="ot">=</span> elections <span class="sc">|&gt;</span> </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">c</span>(travel_time, hh_income), <span class="sc">~</span><span class="fu">mean</span>(., <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>scenario <span class="ot">=</span> <span class="fu">crossing</span>(<span class="at">travel_time =</span> avg_county<span class="sc">$</span>travel_time, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                    <span class="at">hh_income =</span> avg_county<span class="sc">$</span>hh_income,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">census_region =</span> <span class="st">"South"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">black =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fu">min</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">to =</span> <span class="fu">max</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">by =</span> <span class="dv">1</span>))</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>scenario</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 86 × 4
+   travel_time hh_income census_region black
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
+ 1        23.1      4.58 South             0
+ 2        23.1      4.58 South             1
+ 3        23.1      4.58 South             2
+ 4        23.1      4.58 South             3
+ 5        23.1      4.58 South             4
+ 6        23.1      4.58 South             5
+ 7        23.1      4.58 South             6
+ 8        23.1      4.58 South             7
+ 9        23.1      4.58 South             8
+10        23.1      4.58 South             9
+# ℹ 76 more rows</code></pre>
+</div>
+</div>
+<p>Then it’s just a matter of plugging in these values into our regression equation. We can do this with <code>augment()</code>:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">augment</span>(mod_ols, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 86 × 6
+   travel_time hh_income census_region black .fitted .se.fit
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+ 1        23.1      4.58 South             0    20.8   0.428
+ 2        23.1      4.58 South             1    21.6   0.417
+ 3        23.1      4.58 South             2    22.3   0.407
+ 4        23.1      4.58 South             3    23.1   0.397
+ 5        23.1      4.58 South             4    23.8   0.388
+ 6        23.1      4.58 South             5    24.6   0.380
+ 7        23.1      4.58 South             6    25.3   0.372
+ 8        23.1      4.58 South             7    26.1   0.364
+ 9        23.1      4.58 South             8    26.8   0.357
+10        23.1      4.58 South             9    27.6   0.351
+# ℹ 76 more rows</code></pre>
+</div>
+</div>
+<p>Which we can then plot:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">=</span> <span class="fu">augment</span>(mod_ols, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ymin =</span> .fitted <span class="sc">-</span> .se.fit <span class="sc">*</span> <span class="fl">1.96</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymax =</span> .fitted <span class="sc">+</span> .se.fit <span class="sc">*</span> <span class="fl">1.96</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pdat, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> .fitted)) <span class="sc">+</span> </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"blue"</span>) <span class="sc">+</span> </span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> ymin, <span class="at">ymax =</span> ymax), <span class="at">alpha =</span> .<span class="dv">5</span>, <span class="at">fill =</span> <span class="st">"blue"</span>) <span class="sc">+</span> </span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Can do the same with <code>ggeffects::ggpredict</code>, but good to know what’s going on:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>ggeffects<span class="sc">::</span><span class="fu">ggpredict</span>(mod_ols, <span class="at">terms =</span> <span class="fu">c</span>(<span class="st">"black[0:85]"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="non-linear-models" class="level2">
+<h2 class="anchored" data-anchor-id="non-linear-models">Non-linear models</h2>
+<section id="marginal-effects-plots" class="level3">
+<h3 class="anchored" data-anchor-id="marginal-effects-plots">Marginal effects plots</h3>
+<p>With non-linear models, things are more complicated. The effect of a variable now depends on the value of another. Take our interaction model, <code>mod_inter</code>.</p>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{\widehat{per\_dem\_2020}} &amp;= 11.04 + 1.28(\operatorname{black}) - 0.13(\operatorname{travel\_time}) + 3.94(\operatorname{hh\_income})\ + \\
+&amp;\quad 12.24(\operatorname{census\_region}_{\operatorname{Northeast}}) - 4.55(\operatorname{census\_region}_{\operatorname{South}}) + 6.05(\operatorname{census\_region}_{\operatorname{West}}) - 0.33(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{Northeast}})\ - \\
+&amp;\quad 0.57(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{South}}) + 1.36(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+\]</span></p>
+<p>The marginal effect of <code>black</code> on <code>per_dem_2020</code> is now no longer <span class="math inline">\(\beta_1 = 1.28\)</span>, it is:</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;1.28(\operatorname{black}) - 0.33(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{Northeast}})\ -\\
+&amp;\quad 0.57(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{South}}) + 1.36(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+\]</span></p>
+<p>In other words, the effect of the Black share of the population depends on what region we are in.</p>
+<p>The magnitude of the effect is easy, just plug in 0s and 1s.</p>
+<ul>
+<li>the effect of <code>black</code> in the Northeast = <span class="math inline">\(1.28 - 0.33 + 0 + 0 = 0.95\)</span></li>
+<li>the effect of <code>black</code> in the West = <span class="math inline">\(1.28 - 0 + 0 + 1.36 = 2.64\)</span></li>
+</ul>
+<p>The standard error for these effects or slopes is harder to calculate / requires formulas.</p>
+<p>One thing we can do is show how the effect of <code>black</code> varies across census regions. The <code>plot_slopes</code> function from <code>marginaleffects</code> can do this nicely:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>marginaleffects<span class="sc">::</span><span class="fu">plot_slopes</span>(mod_inter, <span class="at">variables =</span> <span class="st">"black"</span>, <span class="at">condition =</span> <span class="st">"census_region"</span>) <span class="sc">+</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"census region"</span>, <span class="at">y =</span> <span class="st">"effect of `black`"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>These show us how the effect of a variable varies across conditions, which is valuable for theory-testing. The y-axis here is the coefficient of <code>black</code>.</p>
+</section>
+<section id="predicted-values" class="level3">
+<h3 class="anchored" data-anchor-id="predicted-values">Predicted values</h3>
+<p>A different approach is to show what values of the outcome variable we should expect to see in different scenarios. These are the predicted values. We follow the same pattern as with the linear model, we first define a scenario:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="ot">=</span> <span class="fu">crossing</span>(<span class="at">travel_time =</span> avg_county<span class="sc">$</span>travel_time, </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">hh_income =</span> avg_county<span class="sc">$</span>hh_income,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">census_region =</span> <span class="fu">c</span>(<span class="st">"South"</span>, <span class="st">"West"</span>, <span class="st">"Northeast"</span>, <span class="st">"Midwest"</span>),</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">black =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fu">min</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">to =</span> <span class="fu">max</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">by =</span> <span class="dv">1</span>))</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>scenario</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 4
+   travel_time hh_income census_region black
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
+ 1        23.1      4.58 Midwest           0
+ 2        23.1      4.58 Midwest           1
+ 3        23.1      4.58 Midwest           2
+ 4        23.1      4.58 Midwest           3
+ 5        23.1      4.58 Midwest           4
+ 6        23.1      4.58 Midwest           5
+ 7        23.1      4.58 Midwest           6
+ 8        23.1      4.58 Midwest           7
+ 9        23.1      4.58 Midwest           8
+10        23.1      4.58 Midwest           9
+# ℹ 334 more rows</code></pre>
+</div>
+</div>
+<p>Notice how here census_region also varies now, since it’s value <strong>matters</strong> for <code>black</code>.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">=</span> <span class="fu">augment</span>(mod_inter, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ymin =</span> .fitted <span class="sc">-</span> .se.fit <span class="sc">*</span> <span class="fl">1.96</span>,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymax =</span> .fitted <span class="sc">+</span> .se.fit <span class="sc">*</span> <span class="fl">1.96</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>pdat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 8
+   travel_time hh_income census_region black .fitted .se.fit  ymin  ymax
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1        23.1      4.58 Midwest           0    26.1   0.418  25.3  26.9
+ 2        23.1      4.58 Midwest           1    27.4   0.388  26.6  28.1
+ 3        23.1      4.58 Midwest           2    28.6   0.371  27.9  29.4
+ 4        23.1      4.58 Midwest           3    29.9   0.369  29.2  30.6
+ 5        23.1      4.58 Midwest           4    31.2   0.383  30.5  32.0
+ 6        23.1      4.58 Midwest           5    32.5   0.411  31.7  33.3
+ 7        23.1      4.58 Midwest           6    33.8   0.449  32.9  34.7
+ 8        23.1      4.58 Midwest           7    35.1   0.497  34.1  36.0
+ 9        23.1      4.58 Midwest           8    36.3   0.551  35.3  37.4
+10        23.1      4.58 Midwest           9    37.6   0.610  36.4  38.8
+# ℹ 334 more rows</code></pre>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pdat, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> .fitted, <span class="at">ymin =</span> ymin, <span class="at">ymax =</span> ymax,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> census_region)) <span class="sc">+</span> </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">alpha =</span> .<span class="dv">5</span>, <span class="fu">aes</span>(<span class="at">fill =</span> census_region))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Or:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pdat, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> .fitted, <span class="at">ymin =</span> ymin, <span class="at">ymax =</span> ymax,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> census_region)) <span class="sc">+</span> </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">alpha =</span> .<span class="dv">5</span>, <span class="fu">aes</span>(<span class="at">fill =</span> census_region)) <span class="sc">+</span> </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(census_region))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Comparing to the simple plot is instructive:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(elections, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> per_dem_2020, <span class="at">color =</span> census_region)) <span class="sc">+</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="non-linear-models-logit" class="level2">
+<h2 class="anchored" data-anchor-id="non-linear-models-logit">Non-linear models: logit</h2>
+<p>Some models are non-linear not because of interactions in the data but because they use non-linear transformations of the data. Logit is one example of this. Look at our <code>mod_logit</code>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\log\left[ \frac { \widehat{P( \operatorname{dems\_win\_20} = \operatorname{1} )} }{ 1 - \widehat{P( \operatorname{dems\_win\_20} = \operatorname{1} )} } \right] &amp;= -5.16 + 0.13(\operatorname{black}) - 0.07(\operatorname{travel\_time}) + 0.76(\operatorname{hh\_income})\ + \\
+&amp;\quad 1.94(\operatorname{census\_region}_{\operatorname{Northeast}}) - 1.35(\operatorname{census\_region}_{\operatorname{South}}) + 1.74(\operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+\]</span></p>
+<p>If we look at the output, it’s in log-odds:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>mod_logit <span class="sc">|&gt;</span> <span class="fu">tidy</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 5
+  term                   estimate std.error statistic  p.value
+  &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             -5.16     0.327      -15.8  4.62e-56
+2 black                    0.126    0.00635     19.8  3.98e-87
+3 travel_time             -0.0712   0.0135      -5.28 1.26e- 7
+4 hh_income                0.765    0.0555      13.8  3.09e-43
+5 census_regionNortheast   1.94     0.203        9.55 1.31e-21
+6 census_regionSouth      -1.35     0.218       -6.20 5.55e-10
+7 census_regionWest        1.74     0.167       10.4  2.25e-25</code></pre>
+</div>
+</div>
+<p>These coefficients are on the log-odds scale. Some people will exponentiate these to get odds ratios but those are uninterpretible to me:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>mod_logit <span class="sc">|&gt;</span> </span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">estimate =</span> <span class="fu">exp</span>(estimate))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 5
+  term                   estimate std.error statistic  p.value
+  &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             0.00574   0.327      -15.8  4.62e-56
+2 black                   1.13      0.00635     19.8  3.98e-87
+3 travel_time             0.931     0.0135      -5.28 1.26e- 7
+4 hh_income               2.15      0.0555      13.8  3.09e-43
+5 census_regionNortheast  6.96      0.203        9.55 1.31e-21
+6 census_regionSouth      0.259     0.218       -6.20 5.55e-10
+7 census_regionWest       5.71      0.167       10.4  2.25e-25</code></pre>
+</div>
+</div>
+<p>With logit, I think marginal effects plots are most useful. Same as before, define a scenario where the variable we care about varies and everything else stays the same:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="ot">=</span> <span class="fu">crossing</span>(<span class="at">travel_time =</span> avg_county<span class="sc">$</span>travel_time, </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">hh_income =</span> avg_county<span class="sc">$</span>hh_income,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">census_region =</span> <span class="st">"South"</span>,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">black =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fu">min</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">to =</span> <span class="fu">max</span>(elections<span class="sc">$</span>black, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">by =</span> <span class="dv">1</span>))</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>scenario</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 86 × 4
+   travel_time hh_income census_region black
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;
+ 1        23.1      4.58 South             0
+ 2        23.1      4.58 South             1
+ 3        23.1      4.58 South             2
+ 4        23.1      4.58 South             3
+ 5        23.1      4.58 South             4
+ 6        23.1      4.58 South             5
+ 7        23.1      4.58 South             6
+ 8        23.1      4.58 South             7
+ 9        23.1      4.58 South             8
+10        23.1      4.58 South             9
+# ℹ 76 more rows</code></pre>
+</div>
+</div>
+<p>We then get predictions:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">=</span> <span class="fu">augment</span>(mod_logit, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lo95 =</span> .fitted <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi95 =</span> .fitted <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.fitted =</span> .fitted)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>pdat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 86 × 8
+   travel_time hh_income census_region black .fitted .se.fit  lo95  hi95
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1        23.1      4.58 South             0   -4.66   0.213 -5.07 -4.24
+ 2        23.1      4.58 South             1   -4.53   0.208 -4.94 -4.12
+ 3        23.1      4.58 South             2   -4.40   0.202 -4.80 -4.01
+ 4        23.1      4.58 South             3   -4.28   0.197 -4.66 -3.89
+ 5        23.1      4.58 South             4   -4.15   0.191 -4.53 -3.78
+ 6        23.1      4.58 South             5   -4.03   0.186 -4.39 -3.66
+ 7        23.1      4.58 South             6   -3.90   0.181 -4.26 -3.55
+ 8        23.1      4.58 South             7   -3.78   0.175 -4.12 -3.43
+ 9        23.1      4.58 South             8   -3.65   0.170 -3.98 -3.32
+10        23.1      4.58 South             9   -3.53   0.165 -3.85 -3.20
+# ℹ 76 more rows</code></pre>
+</div>
+</div>
+<p>Notice these predictions are on the log-odd scale:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pdat, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> .fitted, <span class="at">ymin =</span> lo95, <span class="at">ymax =</span> hi95)) <span class="sc">+</span> </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">alpha =</span> .<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Notice that <em>on the log-odds scale, the effect of <code>black</code> is linear</em>.</p>
+<p>To get to meaningful values we gotta “reverse” the log-odds, which is done by: <span class="math inline">\(\frac{1}{(1 + e^{-x})}\)</span></p>
+<p>So:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">=</span> <span class="fu">augment</span>(mod_logit, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lo95 =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi95 =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.fitted =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted))</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>pdat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 86 × 8
+   travel_time hh_income census_region black .fitted .se.fit    lo95   hi95
+         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+ 1        23.1      4.58 South             0 0.00941   0.213 0.00622 0.0142
+ 2        23.1      4.58 South             1 0.0107    0.208 0.00712 0.0159
+ 3        23.1      4.58 South             2 0.0121    0.202 0.00815 0.0178
+ 4        23.1      4.58 South             3 0.0137    0.197 0.00933 0.0200
+ 5        23.1      4.58 South             4 0.0155    0.191 0.0107  0.0223
+ 6        23.1      4.58 South             5 0.0175    0.186 0.0122  0.0250
+ 7        23.1      4.58 South             6 0.0198    0.181 0.0140  0.0280
+ 8        23.1      4.58 South             7 0.0224    0.175 0.0160  0.0313
+ 9        23.1      4.58 South             8 0.0253    0.170 0.0183  0.0350
+10        23.1      4.58 South             9 0.0286    0.165 0.0209  0.0391
+# ℹ 76 more rows</code></pre>
+</div>
+</div>
+<p>Plot:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pdat, <span class="fu">aes</span>(<span class="at">x =</span> black, <span class="at">y =</span> .fitted)) <span class="sc">+</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo95, <span class="at">ymax =</span> hi95), <span class="at">alpha =</span> .<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can do the same with <code>ggpredict</code>, but its good to know what’s happening:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>ggeffects<span class="sc">::</span><span class="fu">ggpredict</span>(mod_logit, <span class="at">terms =</span> <span class="st">"black [0:85]"</span>) <span class="sc">|&gt;</span> <span class="fu">plot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A useful approach with these kind of plots is to pick meaningful scenarios and compare them. How much more likely is the average town in the South, with 60% Black population to vote for Democrats than the same town with 30% Black population?</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="ot">=</span> <span class="fu">crossing</span>(<span class="at">travel_time =</span> avg_county<span class="sc">$</span>travel_time, </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">hh_income =</span> avg_county<span class="sc">$</span>hh_income,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">census_region =</span> <span class="st">"South"</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">black =</span> <span class="fu">c</span>(<span class="dv">60</span>, <span class="dv">30</span>))</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="fu">augment</span>(mod_logit, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lo95 =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi95 =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">.fitted =</span> arm<span class="sc">::</span><span class="fu">invlogit</span>(.fitted))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 8
+  travel_time hh_income census_region black .fitted .se.fit  lo95  hi95
+        &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1        23.1      4.58 South            30   0.292   0.103 0.252 0.335
+2        23.1      4.58 South            60   0.947   0.220 0.921 0.965</code></pre>
+</div>
+</div>
+</section>
+<section id="other-non-linear-terms" class="level2">
+<h2 class="anchored" data-anchor-id="other-non-linear-terms">Other non-linear terms</h2>
+<p>Sometimes we think the relationship between one variable and another is non-linear:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="ot">=</span> gapminder <span class="sc">|&gt;</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">gdpPercap =</span> gdpPercap <span class="sc">/</span> <span class="dv">10000</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>mod_non <span class="ot">=</span> <span class="fu">lm</span>(lifeExp <span class="sc">~</span> gdpPercap <span class="sc">+</span> <span class="fu">I</span>(gdpPercap<span class="sc">^</span><span class="dv">2</span>), <span class="at">data =</span> gapminder)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(mod_non)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  term           estimate std.error statistic   p.value
+  &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)       50.5     0.298      170.  0        
+2 gdpPercap         15.5     0.374       41.5 1.29e-260
+3 I(gdpPercap^2)    -1.50    0.0579     -25.9 3.94e-125</code></pre>
+</div>
+</div>
+<p>In practice, this looks like this:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y =</span> lifeExp)) <span class="sc">+</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">formula =</span> y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">I</span>(x<span class="sc">^</span><span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This is another situation where the effect of X on Y depends on another variable – but in this case, itself:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{\widehat{lifeExp}} &amp;= 50.52 + 15.51(\operatorname{gdpPercap}) - 1.5(\operatorname{gdpPercap^{2}})
+\end{aligned}
+\]</span></p>
+<p>The first derivative equals:</p>
+<p><span class="math inline">\(\frac{dy}{dx} = -2 \times 1.5(gdpPercap)\)</span></p>
+<p>Depending on the value of GDP, the effect of additional GDP could be zero, negative, or positive.</p>
+<p>In these situations, I think the marginal effect or slope plot is very useful:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>marginaleffects<span class="sc">::</span><span class="fu">plot_slopes</span>(mod_non, <span class="at">variables =</span> <span class="st">"gdpPercap"</span>, </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">condition =</span> <span class="st">"gdpPercap"</span>) <span class="sc">+</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"GDP per capita"</span>, <span class="at">y =</span> <span class="st">"effect of `gdpPercap`"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="log-transformed-dv" class="level2">
+<h2 class="anchored" data-anchor-id="log-transformed-dv">log-transformed DV</h2>
+<p>When you log-transform a DV, things also change. We log transform when we have a DV that only takes on positive numbers, and/or when we expect that</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>mod_log <span class="ot">=</span> <span class="fu">lm</span>(<span class="fu">log</span>(lifeExp) <span class="sc">~</span> gdpPercap, <span class="at">data =</span> gapminder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{\widehat{log(lifeExp)}} &amp;= 3.97 + 0.13(\operatorname{gdpPercap})
+\end{aligned}
+\]</span></p>
+<p>The model is being fit to the DV on the log-scale. To get back to the regular scale we can exponentiate both sides:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{\widehat{lifeExp}} &amp;= e^{3.97 + 0.13(\operatorname{gdpPercap})}
+\end{aligned}
+\]</span></p>
+<p>The first derivative of <span class="math inline">\(\frac{dy}{dx} = 6.82 \times e^{(0.13 \times gdpPercap)}\)</span></p>
+<p>So the slope of GDP depends on its own value:</p>
+<ul>
+<li>when GDP = 0, the slope of GDP = <span class="math inline">\(6.82 \times e^{(0.13 \times 0)} = 6.82\)</span></li>
+<li>when GDP = 1, the slope of GDP = <span class="math inline">\(6.82 \times e^{(0.13 \times 1)} = 7.76\)</span></li>
+</ul>
+<p>Let’s see how this works with prediction.</p>
+<p>Define scenario:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="ot">=</span> <span class="fu">crossing</span>(<span class="at">gdpPercap =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">10</span>, <span class="at">by =</span> .<span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Predictions:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>preds <span class="ot">=</span> <span class="fu">augment</span>(mod_log, <span class="at">newdata =</span> scenario, <span class="at">se_fit =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lo95 =</span> .fitted <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit,</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi95 =</span> .fitted <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit)</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>preds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 21 × 5
+   gdpPercap .fitted .se.fit  lo95  hi95
+       &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1       0      3.97 0.00583  3.96  3.98
+ 2       0.5    4.03 0.00483  4.02  4.04
+ 3       1      4.10 0.00489  4.09  4.11
+ 4       1.5    4.16 0.00600  4.15  4.17
+ 5       2      4.22 0.00771  4.21  4.24
+ 6       2.5    4.29 0.00971  4.27  4.31
+ 7       3      4.35 0.0119   4.33  4.38
+ 8       3.5    4.42 0.0141   4.39  4.45
+ 9       4      4.48 0.0164   4.45  4.52
+10       4.5    4.55 0.0187   4.51  4.58
+# ℹ 11 more rows</code></pre>
+</div>
+</div>
+<p>Notice these predictions are on the log-scale and that the effect of GDP is linear in the log-scale:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(preds, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y =</span> .fitted,</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymin =</span> lo95, <span class="at">ymax =</span> hi95)) <span class="sc">+</span> </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">alpha =</span> .<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To get back to regular life expectancy in years we just exponentiate:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>preds <span class="sc">|&gt;</span> </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lo95 =</span> <span class="fu">exp</span>(.fitted <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi95 =</span> <span class="fu">exp</span>(.fitted <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> .se.fit),</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.fitted =</span> <span class="fu">exp</span>(.fitted)) <span class="sc">|&gt;</span> </span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y =</span> .fitted)) <span class="sc">+</span> </span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo95, <span class="at">ymax =</span> hi95), <span class="at">alpha =</span> .<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="06-models_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

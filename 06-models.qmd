@@ -1,0 +1,642 @@
+---
+title: "06-models"
+format: html
+---
+
+```{r setup, include=FALSE}
+# set knit options
+knitr::opts_chunk$set(
+  fig.width=9, 
+  fig.height=5, 
+  fig.retina=3,
+  fig.align="center",
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+Load libraries:
+
+```{r}
+library(tidyverse)
+library(juanr)
+library(gapminder)
+library(broom)
+library(modelsummary)
+library(stargazer)
+theme_set(theme_light())
+```
+
+I'm gonna look at the elections dataset, and I'll create a dummy variable that tells me who won each county: 
+
+```{r}
+elections = elections |> 
+  # make vote share a percent instead of proportion
+  mutate(per_dem_2020 = per_dem_2020 * 100,
+         per_gop_2020 = per_gop_2020 * 100) |> 
+  # created a binary DV
+  mutate(dems_win_20 = ifelse(per_dem_2020 > per_gop_2020, 1, 0)) |> 
+  # make income in tens of thousands of dollars
+  mutate(hh_income = hh_income / 10000)
+elections |> 
+  select(name, state, census_region, per_dem_2020, dems_win_20, black, hh_income, travel_time)
+```
+
+
+I'll fit three models: a model with all linear terms; a model with an interaction; a logit model.
+
+
+```{r}
+mod_ols = lm(per_dem_2020 ~  black + travel_time + hh_income + census_region, 
+             data = elections)
+
+mod_inter = lm(per_dem_2020 ~ black + travel_time + hh_income + 
+                 census_region + black * census_region, 
+             data = elections)
+
+mod_logit = glm(dems_win_20 ~ black + travel_time + hh_income + census_region,
+                data = elections, family = binomial(link = "logit"))
+```
+
+
+I like using `broom::tidy` to look at output since it converts output to a table:
+
+
+```{r}
+tidy(mod_ols)
+```
+
+I can manipulate table however I want, for example, which estimates are statistically significant at $p < .05$?
+
+
+```{r}
+tidy(mod_ols) |> 
+  filter(p.value < .05)
+```
+
+
+A useful tip in these cases is to create a variable dictionary, with the "dirty" variable name and the "clean" one you want to use:
+
+
+```{r}
+dict = tribble(~dirty, ~clean,
+               "(Intercept)", "Intercept",
+               "black", "Black % of population",
+               "travel_time", "Average commute time to work",
+               "hh_income", "Median household income",
+               "census_regionNortheast", "Northeast",
+               "census_regionSouth", "South",
+               "census_regionWest", "West",
+               "black:census_regionNortheast", "Black % X Northeast",
+               "black:census_regionSouth", "Black % X South",
+               "black:census_regionWest", "Black % X West")
+```
+
+
+I can then use this dictionary to merge into my model output and get clean labels:
+
+
+```{r}
+mod_inter |> 
+  tidy() |> 
+  left_join(dict, by = c("term" = "dirty"))
+```
+
+
+
+## Displaying model results: the table
+
+
+
+The table is the classic way. `modelsummary` is nice for this. Need a list of models to feed the function. Also very "customizable." with what statistics to report.
+
+
+```{r}
+models = list("OLS" = mod_ols, 
+              "Interaction model" = mod_inter,
+              "Logit model" = mod_logit)
+
+
+modelsummary(models, stars = TRUE, gof_map = "nobs")
+```
+
+
+You can also feed it clean variable names from your dictionary using the `coef_map` argument. A nice trick here is that it accepts a named vector, and that `deframe` will convert a dataframe t a named vector:
+
+
+```{r}
+named_coefs = deframe(dict)
+
+modelsummary(models, stars = TRUE, gof_map = "nobs", coef_map = named_coefs)
+```
+
+
+
+
+
+
+## Displaying model results: coefficient plot
+
+
+We can display coefficients in a plot using the `geom_pointrange` geometry. Here's another situation where `tidy()` is useful:
+
+
+```{r}
+plot_model = tidy(mod_ols, conf.int = TRUE) |> left_join(dict, by = c("term" = "dirty"))
+ggplot(plot_model, aes(y = clean, x = estimate, xmin = conf.low, xmax = conf.high)) + 
+  geom_pointrange() + 
+  # add vertical line at zero
+  geom_vline(xintercept = 0, lty = 2, color = "red") + 
+  theme_light()
+```
+
+
+These plots are very hard to get right. The problem is that the explanatory variables are all on different scales, so they make the coefficients hard to see. All of the coefficients above are $p < .05$, but it doesn't look like it. 
+
+
+One thing to do is drop the (giant) intercept:
+
+
+```{r}
+plot_model = tidy(mod_ols, conf.int = TRUE) |> 
+  filter(term != "(Intercept)")
+ggplot(plot_model, aes(y = term, x = estimate, xmin = conf.low, xmax = conf.high)) + 
+  geom_pointrange() + 
+  # add vertical line at zero
+  geom_vline(xintercept = 0, lty = 2, color = "red") + 
+  theme_light()
+```
+
+
+Another thing to do is to **standardize** the variables so that they are on the same scale: an increase of one unit for each = an increase of one standard deviation in the outcome. 
+
+```{r}
+elections_scale = elections |> 
+  # scale all the numeric variables
+  mutate(across(where(is.numeric), scale))
+
+mod_ols_scale = lm(per_dem_2020 ~ pop + female + black + travel_time + hh_income + census_region, data = elections_scale)
+
+plot_model = tidy(mod_ols_scale, conf.int = TRUE)
+
+ggplot(plot_model, aes(y = term, x = estimate, xmin = conf.low, xmax = conf.high)) + 
+  geom_pointrange() + 
+  # add vertical line at zero
+  geom_vline(xintercept = 0, lty = 2, color = "red") + 
+  theme_light()
+```
+
+
+We can also combine multiple models using `tidy`, but need to create a variable to keep track of which is which. Then we bind the tables together. 
+
+```{r}
+plot_ols = mod_ols |> 
+  tidy(conf.int = TRUE) |> 
+  mutate(model = "OLS")
+
+plot_logit = mod_logit |> 
+  tidy(conf.int = TRUE) |> 
+  mutate(model = "Logit")
+
+bind_rows(plot_ols, plot_logit) |> 
+  ggplot(aes(y = term, x = estimate, xmin = conf.low, xmax = conf.high,
+             color = model)) + 
+  geom_pointrange(position = position_dodge(width = 0.5)) + 
+  # add vertical line at zero
+  geom_vline(xintercept = 0, lty = 2, color = "red") + 
+  theme_light()
+```
+
+
+
+Same problems as before we would have to deal with. Honestly, I think these kind of plots are more trouble than they're worth. 
+
+
+
+## Marginal effects (linear models)
+
+
+Most of the times we don't care about all of these coefficients, we actually care about just one (our treatment variable). The rest are controls that have no causal interpretation. 
+
+
+With OLS, it's simple, the marginal effect of `black` is the first derivative of `per_dem_share` with respect to `black`, which is just the $\beta$ coefficient for `black`
+
+
+$$
+\begin{aligned}
+\operatorname{\widehat{per\_dem\_2020}} &= 10.91 + 0.75(\operatorname{black}) - 0.09(\operatorname{travel\_time}) + 4.07(\operatorname{hh\_income})\ + \\
+&\quad 11.77(\operatorname{census\_region}_{\operatorname{Northeast}}) - 6.67(\operatorname{census\_region}_{\operatorname{South}}) + 7.62(\operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+$$
+
+
+So the marginal effect of the percent of the black population on Democratic vote share is .75 $\rightarrow$ for every percent increase in the Black population, Democratic vote share increases by .75%.   
+
+
+### Plotting substantive effects
+
+
+A nice way to convey effect magnitudes is to derive predicted values of our outcome as the variable we care about varies, holding all else constant. Three steps to this: 
+
+1) fit the model
+2) define a scenario where our key variable varies and everything else is held at some meaningful constant value, like the mean
+3) plug the scenario into the model to get the estimate
+
+
+We can do (2) using `crossing`: 
+
+```{r}
+avg_county = elections |> 
+  summarise(across(c(travel_time, hh_income), ~mean(., na.rm = TRUE)))
+
+scenario = crossing(travel_time = avg_county$travel_time, 
+                    hh_income = avg_county$hh_income,
+                    census_region = "South",
+                    black = seq(from = min(elections$black, na.rm = TRUE),
+                     to = max(elections$black, na.rm = TRUE),
+                     by = 1))
+scenario
+```
+
+
+
+Then it's just a matter of plugging in these values into our regression equation. We can do this with `augment()`:
+
+```{r}
+augment(mod_ols, newdata = scenario, se_fit = TRUE)
+```
+
+
+Which we can then plot:
+
+
+```{r}
+pdat = augment(mod_ols, newdata = scenario, se_fit = TRUE) |> 
+  mutate(ymin = .fitted - .se.fit * 1.96,
+                  ymax = .fitted + .se.fit * 1.96)
+
+ggplot(pdat, aes(x = black, y = .fitted)) + 
+  geom_line(color = "blue") + 
+  geom_ribbon(aes(ymin = ymin, ymax = ymax), alpha = .5, fill = "blue") + 
+  theme_light()
+```
+
+Can do the same with `ggeffects::ggpredict`, but good to know what's going on:
+
+
+```{r}
+ggeffects::ggpredict(mod_ols, terms = c("black[0:85]")) |> 
+  plot()
+```
+
+
+
+## Non-linear models
+
+
+### Marginal effects plots
+
+With non-linear models, things are more complicated. The effect of a variable now depends on the value of another. Take our interaction model, `mod_inter`.
+
+$$
+\begin{aligned}
+\operatorname{\widehat{per\_dem\_2020}} &= 11.04 + 1.28(\operatorname{black}) - 0.13(\operatorname{travel\_time}) + 3.94(\operatorname{hh\_income})\ + \\
+&\quad 12.24(\operatorname{census\_region}_{\operatorname{Northeast}}) - 4.55(\operatorname{census\_region}_{\operatorname{South}}) + 6.05(\operatorname{census\_region}_{\operatorname{West}}) - 0.33(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{Northeast}})\ - \\
+&\quad 0.57(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{South}}) + 1.36(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+$$
+
+The marginal effect of `black` on `per_dem_2020` is now no longer $\beta_1 = 1.28$, it is:
+
+
+$$
+\begin{aligned}
+&1.28(\operatorname{black}) - 0.33(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{Northeast}})\ -\\
+&\quad 0.57(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{South}}) + 1.36(\operatorname{black} \times \operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+$$
+
+
+In other words, the effect of the Black share of the population depends on what region we are in.
+
+
+The magnitude of the effect is easy, just plug in 0s and 1s. 
+
+- the effect of `black` in the Northeast = $1.28 - 0.33 + 0 + 0 = 0.95$
+- the effect of `black` in the West = $1.28 - 0 + 0 + 1.36 = 2.64$
+
+
+The standard error for these effects or slopes is harder to calculate / requires formulas. 
+
+
+One thing we can do is show how the effect of `black` varies across census regions. The `plot_slopes` function from `marginaleffects` can do this nicely:
+
+
+```{r}
+marginaleffects::plot_slopes(mod_inter, variables = "black", condition = "census_region") + 
+  labs(x = "census region", y = "effect of `black`")
+```
+
+These show us how the effect of a variable varies across conditions, which is valuable for theory-testing. The y-axis here is the coefficient of `black`. 
+
+
+
+### Predicted values
+
+
+A different approach is to show what values of the outcome variable we should expect to see in different scenarios. These are the predicted values. We follow the same pattern as with the linear model, we first define a scenario:
+
+```{r}
+scenario = crossing(travel_time = avg_county$travel_time, 
+         hh_income = avg_county$hh_income,
+         census_region = c("South", "West", "Northeast", "Midwest"),
+         black = seq(from = min(elections$black, na.rm = TRUE),
+                     to = max(elections$black, na.rm = TRUE),
+                     by = 1))
+scenario
+```
+
+Notice how here census_region also varies now, since it's value **matters** for `black`. 
+
+
+```{r}
+pdat = augment(mod_inter, newdata = scenario, se_fit = TRUE) |> 
+  mutate(ymin = .fitted - .se.fit * 1.96,
+                  ymax = .fitted + .se.fit * 1.96)
+
+pdat
+```
+
+```{r}
+ggplot(pdat, aes(x = black, y = .fitted, ymin = ymin, ymax = ymax,
+                 color = census_region)) + 
+  geom_line() + 
+  geom_ribbon(alpha = .5, aes(fill = census_region))
+```
+
+Or:
+
+
+```{r}
+ggplot(pdat, aes(x = black, y = .fitted, ymin = ymin, ymax = ymax,
+                 color = census_region)) + 
+  geom_line() + 
+  geom_ribbon(alpha = .5, aes(fill = census_region)) + 
+  facet_wrap(vars(census_region))
+```
+
+
+Comparing to the simple plot is instructive:
+
+
+```{r}
+ggplot(elections, aes(x = black, y = per_dem_2020, color = census_region)) +
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+
+## Non-linear models: logit
+
+
+Some models are non-linear not because of interactions in the data but because they use non-linear transformations of the data. Logit is one example of this. Look at our `mod_logit`:
+
+
+$$
+\begin{aligned}
+\log\left[ \frac { \widehat{P( \operatorname{dems\_win\_20} = \operatorname{1} )} }{ 1 - \widehat{P( \operatorname{dems\_win\_20} = \operatorname{1} )} } \right] &= -5.16 + 0.13(\operatorname{black}) - 0.07(\operatorname{travel\_time}) + 0.76(\operatorname{hh\_income})\ + \\
+&\quad 1.94(\operatorname{census\_region}_{\operatorname{Northeast}}) - 1.35(\operatorname{census\_region}_{\operatorname{South}}) + 1.74(\operatorname{census\_region}_{\operatorname{West}})
+\end{aligned}
+$$
+
+If we look at the output, it's in log-odds:
+
+```{r}
+mod_logit |> tidy()
+```
+
+
+
+These coefficients are on the log-odds scale. Some people will exponentiate these to get odds ratios but those are uninterpretible to me: 
+
+```{r}
+mod_logit |> 
+  tidy() |> 
+  mutate(estimate = exp(estimate))
+```
+
+
+With logit, I think marginal effects plots are most useful. Same as before, define a scenario where the variable we care about varies and everything else stays the same:
+
+
+```{r}
+scenario = crossing(travel_time = avg_county$travel_time, 
+                    hh_income = avg_county$hh_income,
+                    census_region = "South",
+                    black = seq(from = min(elections$black, na.rm = TRUE),
+                     to = max(elections$black, na.rm = TRUE),
+                     by = 1))
+scenario
+```
+
+
+We then get predictions:
+
+```{r}
+pdat = augment(mod_logit, newdata = scenario, se_fit = TRUE) |> 
+  mutate(lo95 = .fitted - 1.96 * .se.fit,
+         hi95 = .fitted + 1.96 * .se.fit,
+         .fitted = .fitted)
+pdat
+```
+
+Notice these predictions are on the log-odd scale:
+
+
+```{r}
+ggplot(pdat, aes(x = black, y = .fitted, ymin = lo95, ymax = hi95)) + 
+  geom_line() +
+  geom_ribbon(alpha = .4)
+```
+
+
+Notice that *on the log-odds scale, the effect of `black` is linear*. 
+
+
+To get to meaningful values we gotta "reverse" the log-odds, which is done by: $\frac{1}{(1 + e^{-x})}$
+
+So:
+
+```{r}
+pdat = augment(mod_logit, newdata = scenario, se_fit = TRUE) |> 
+  mutate(lo95 = arm::invlogit(.fitted - 1.96 * .se.fit),
+         hi95 = arm::invlogit(.fitted + 1.96 * .se.fit),
+         .fitted = arm::invlogit(.fitted))
+pdat
+```
+
+Plot:
+
+```{r}
+ggplot(pdat, aes(x = black, y = .fitted)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = .4)
+```
+
+
+We can do the same with `ggpredict`, but its good to know what's happening:
+
+```{r}
+ggeffects::ggpredict(mod_logit, terms = "black [0:85]") |> plot()
+```
+
+A useful approach with these kind of plots is to pick meaningful scenarios and compare them. How much more likely is the average town in the South, with 60% Black population to vote for Democrats than the same town with 30% Black population?
+
+
+```{r}
+scenario = crossing(travel_time = avg_county$travel_time, 
+                    hh_income = avg_county$hh_income,
+                    census_region = "South",
+                    black = c(60, 30))
+
+augment(mod_logit, newdata = scenario, se_fit = TRUE) |> 
+  mutate(lo95 = arm::invlogit(.fitted - 1.96 * .se.fit),
+         hi95 = arm::invlogit(.fitted + 1.96 * .se.fit),
+         .fitted = arm::invlogit(.fitted))
+```
+
+
+## Other non-linear terms
+
+
+Sometimes we think the relationship between one variable and another is non-linear:
+
+
+```{r}
+gapminder = gapminder |> 
+  mutate(gdpPercap = gdpPercap / 10000)
+mod_non = lm(lifeExp ~ gdpPercap + I(gdpPercap^2), data = gapminder)
+tidy(mod_non)
+```
+
+
+In practice, this looks like this:
+
+
+```{r}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point() + 
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2))
+```
+
+This is another situation where the effect of X on Y depends on another variable -- but in this case, itself:
+
+
+$$
+\begin{aligned}
+\operatorname{\widehat{lifeExp}} &= 50.52 + 15.51(\operatorname{gdpPercap}) - 1.5(\operatorname{gdpPercap^{2}})
+\end{aligned}
+$$
+
+The first derivative equals:
+
+$\frac{dy}{dx} = -2 \times 1.5(gdpPercap)$
+
+
+Depending on the value of GDP, the effect of additional GDP could be zero, negative, or positive. 
+
+
+In these situations, I think the marginal effect or slope plot is very useful:
+
+
+```{r}
+marginaleffects::plot_slopes(mod_non, variables = "gdpPercap", 
+                             condition = "gdpPercap") + 
+  labs(x = "GDP per capita", y = "effect of `gdpPercap`")
+```
+
+
+
+## log-transformed DV
+
+
+When you log-transform a DV, things also change. We log transform when we have a DV that only takes on positive numbers, and/or when we expect that 
+
+```{r}
+mod_log = lm(log(lifeExp) ~ gdpPercap, data = gapminder)
+```
+
+
+$$
+\begin{aligned}
+\operatorname{\widehat{log(lifeExp)}} &= 3.97 + 0.13(\operatorname{gdpPercap})
+\end{aligned}
+$$
+
+
+The model is being fit to the DV on the log-scale. To get back to the regular scale we can exponentiate both sides:
+
+
+$$
+\begin{aligned}
+\operatorname{\widehat{lifeExp}} &= e^{3.97 + 0.13(\operatorname{gdpPercap})}
+\end{aligned}
+$$
+
+
+The first derivative of $\frac{dy}{dx} = 6.82 \times e^{(0.13 \times gdpPercap)}$
+
+
+So the slope of GDP depends on its own value:
+
+- when GDP = 0, the slope of GDP = $6.82 \times e^{(0.13 \times 0)} = 6.82$
+- when GDP = 1, the slope of GDP = $6.82 \times e^{(0.13 \times 1)} = 7.76$
+
+
+Let's see how this works with prediction.
+
+
+Define scenario:
+
+```{r}
+scenario = crossing(gdpPercap = seq(0, 10, by = .5))
+```
+
+
+Predictions:
+
+
+```{r}
+preds = augment(mod_log, newdata = scenario, se_fit = TRUE) |> 
+  mutate(lo95 = .fitted - 1.96 * .se.fit,
+         hi95 = .fitted + 1.96 * .se.fit)
+preds
+```
+
+Notice these predictions are on the log-scale and that the effect of GDP is linear in the log-scale:
+
+```{r}
+ggplot(preds, aes(x = gdpPercap, y = .fitted,
+                  ymin = lo95, ymax = hi95)) + 
+  geom_line() + 
+  geom_ribbon(alpha = .4)
+```
+
+
+To get back to regular life expectancy in years we just exponentiate:
+
+
+```{r}
+preds |> 
+  mutate(lo95 = exp(.fitted - 1.96 * .se.fit),
+         hi95 = exp(.fitted + 1.96 * .se.fit),
+         .fitted = exp(.fitted)) |> 
+  ggplot(aes(x = gdpPercap, y = .fitted)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = .4)
+```
+

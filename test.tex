@@ -1,0 +1,32 @@
+\begin{table}
+\centering
+\begin{tabular}[t]{lccc}
+\toprule
+  & OLS & Interaction model & Logit model\\
+\midrule
+(Intercept) & \num{1091.334}*** & \num{1104.112}*** & \num{-5.161}***\\
+ & (\num{118.995}) & (\num{119.664}) & (\num{0.327})\\
+black & \num{75.343}*** & \num{128.274}*** & \num{0.126}***\\
+ & (\num{1.692}) & (\num{7.600}) & (\num{0.006})\\
+travel\_time & \num{-9.008}* & \num{-13.067}** & \num{-0.071}***\\
+ & (\num{4.335}) & (\num{4.302}) & (\num{0.013})\\
+hh\_income & \num{4074755.622}*** & \num{3942914.576}*** & \num{7645.464}***\\
+ & (\num{195356.256}) & (\num{193008.544}) & (\num{554.575})\\
+census\_regionNortheast & \num{1176.796}*** & \num{1224.126}*** & \num{1.941}***\\
+ & (\num{90.011}) & (\num{108.523}) & (\num{0.203})\\
+census\_regionSouth & \num{-667.353}*** & \num{-454.955}*** & \num{-1.352}***\\
+ & (\num{56.263}) & (\num{61.260}) & (\num{0.218})\\
+census\_regionWest & \num{761.608}*** & \num{604.598}*** & \num{1.742}***\\
+ & (\num{67.814}) & (\num{81.670}) & (\num{0.167})\\
+black × census\_regionNortheast &  & \num{-32.699}* & \\
+ &  & (\num{13.262}) & \\
+black × census\_regionSouth &  & \num{-56.945}*** & \\
+ &  & (\num{7.789}) & \\
+black × census\_regionWest &  & \num{136.138}*** & \\
+ &  & (\num{28.754}) & \\
+\midrule
+Num.Obs. & \num{3111} & \num{3111} & \num{3111}\\
+\bottomrule
+\multicolumn{4}{l}{\rule{0pt}{1em}+ p $<$ 0.1, * p $<$ 0.05, ** p $<$ 0.01, *** p $<$ 0.001}\\
+\end{tabular}
+\end{table}

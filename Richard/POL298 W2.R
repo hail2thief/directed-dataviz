@@ -1,4 +1,4 @@
-#### Data Viz W2 ####
+#### Data Viz W2 - Week 2: Grammar of Graphics ####
 
 library(ggplot2)
 library(AppliedPredictiveModeling)

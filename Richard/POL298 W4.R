@@ -1,4 +1,4 @@
-#### POL298 Assignment 3 ####
+#### POL298 Assignment 3 - Week 4: Distributions ####
 
 setwd("/Users/richardkornrumpf/Documents/GitHub/directed-dataviz/Richard")
 

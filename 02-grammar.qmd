@@ -49,11 +49,7 @@ ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp,
   theme_bw()
 ```
 
-
 When you map an aesthetic globally, two things are happening. The first is that all of the geometries you use (`geom_point()`, `geom_line()`, etc.) will **inherit** the aesthetic. The second is that you are allowing the aesthetic to **vary** in response to your variable (e.g., different colors for continents).
-
-
-
 
 Look what happens if we instead make aesthetics static:
 
@@ -62,17 +58,13 @@ ggplot(data = gap_07, aes(x = gdpPercap, y = lifeExp)) +
   geom_point(size = 4, color = "orange", shape = 2)
 ```
 
-
-
-You can also map aesthetics to specific geometries (notice here I switched back to original gapminder dataset). This allows you to map aesthetics to only one geometry. Notice how this allows the points and the smoothing line to have different aesthetics. 
+You can also map aesthetics to specific geometries (notice here I switched back to original gapminder dataset). This allows you to map aesthetics to only one geometry. Notice how this allows the points and the smoothing line to have different aesthetics.
 
 ```{r}
 ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) + 
   geom_point(aes(color = continent)) +
   geom_smooth()
 ```
-
-
 
 For contrast, look at what happens when I instead set everything globally. I get separate smoothing lines per continent:
 
@@ -81,8 +73,6 @@ ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
   geom_point() +
   geom_smooth()
 ```
-
-
 
 ## Highlighting observations
 

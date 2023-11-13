@@ -1,4 +1,4 @@
-#### POL298 Assignment 4 ####
+#### POL298 Assignment 4 - Week 5: Relationships ####
 
 setwd("/Users/richardkornrumpf/Documents/GitHub/directed-dataviz/Richard")
 

@@ -1,4 +1,4 @@
-#### POL298 Assignment 2 ####
+#### POL298 Assignment 2 - Week 3: Amounts and Proportions ####
 ### Make a barplot, stacked bar plot, heat map, and nested area plot.
 library(ggplot2)
 library(AppliedPredictiveModeling)

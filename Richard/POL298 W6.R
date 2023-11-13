@@ -1,4 +1,4 @@
-#### POL298 Assignment 5 ####
+#### POL298 Assignment 5 - Week 6: Model Output ####
 
 setwd("/Users/richardkornrumpf/Documents/GitHub/directed-dataviz/Richard")
 

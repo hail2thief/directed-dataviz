@@ -1,0 +1,119 @@
+---
+title: "Bernhard_Week7"
+format: html
+editor: visual
+---
+
+## Week 7 Assignment
+
+Tasks: make a jitter plot, scatterplot with labeled points, barplot with text over the bars, use facet_wrap in a plot, make all plots with title, subtitle, caption, and every aesthetic has a title.
+
+## Loading Data
+
+```{r}
+library(juanr)
+data("elections")
+```
+
+## Plots
+
+### Jitter Plot
+
+Now that we've loaded in the election data, we're ready to begin visualizing! First, let's create a jittered scatterplot of showing each Pennsylvania county democratic vote share by it's respective percentage of white individuals.
+
+```{r}
+# Load required packages
+library(ggplot2)
+library(dplyr)
+
+# Subset data to only include Pennsylvania
+pa_data <- elections %>%
+  filter(state == "PA")
+
+# Create a scatterplot with jitter for Pennsylvania
+p_jitter <- ggplot(pa_data, aes(x = white, y = per_dem_2020)) +
+  geom_jitter(aes(color = census_region), width = 0.2, height = 0.2, alpha = 0.6) +
+  labs(title = "Percentage White vs Democratic Vote Share in 2020",
+       subtitle = "Percentages on Pennsylvania County Level",
+       x = "Percentage of White Individuals",
+       y = "Percentage of Democratic Votes in 2020") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+print(p_jitter)
+```
+
+```{r}
+ggsave("Bernhard_Jitter.png", plot = p_jitter, width = 8, height = 6, dpi = 300)
+```
+
+### Scatterplot With Labeled Points
+
+Next, let's create a scatterplot that visualizes the percentage of Democratic voters in the 2020 election by each Pennsylvania county's household income level. The added labels provide the viewer with a guide to identify which county corresponds with each point on the scatterplot.
+
+```{r}
+# Create a scatterplot with labels
+p_label <- ggplot(pa_data, aes(x = hh_income, y = per_dem_2020)) +
+  geom_point() +
+  labs(title = "Household Income vs Democratic Vote Share",
+       subtitle = "2020 Election Vote Share in Pennsylvania Counties",
+       x = "Household Income",
+       y = "Percentage of Democratic Votes in 2020") +
+  theme_minimal()
+
+# Adding labels to the plot
+p_label + geom_text(aes(label = name), 
+                    check_overlap = TRUE, 
+                    vjust = 1, 
+                    hjust = 1,
+                    size = 3)
+```
+
+```{r}
+ggsave("Bernhard_LabelScatter.png", plot = p_label, width = 8, height = 6, dpi = 300)
+```
+
+### Labeled Barplot
+
+Finally, let's create a faceted and labeled barplot that shows the percentage of Democratic voters for the 2020 election in the top five least and most populous counties. Darker bar colors correspond with higher levels of population in each county.
+
+```{r}
+library(scales)  # For percentage scale
+
+# Prepare data for top 5 and bottom 5 counties
+top_counties <- elections %>%
+  filter(state == "PA") %>%
+  arrange(desc(pop)) %>%
+  head(5) %>%
+  mutate(group = "Top 5", rank = rank(pop))
+
+bottom_counties <- elections %>%
+  filter(state == "PA") %>%
+  arrange(pop) %>%
+  head(5) %>%
+  mutate(group = "Bottom 5", rank = rank(-pop))
+
+# Combine the datasets
+combined_data <- rbind(top_counties, bottom_counties)
+
+# Creating Barplot
+p_bar <- ggplot(combined_data, aes(x = reorder(name, pop), y = per_dem_2020 * 100, fill = rank)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = name, y = per_dem_2020), angle = 90, hjust = 0.001, size = 3) +
+  scale_fill_gradient(low = "lightblue", high = "cyan4") +
+  labs(title = "Percentage of Democratic Voters in 2020 by County Population Size in Pennsylvania",
+       x = "County",
+       y = "Percentage of Democratic Voters") +
+  scale_y_continuous() +
+  facet_wrap(~ group, scales = "free_x") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.title = element_text(size = 12))
+
+print(p_bar)
+```
+
+```{r}
+ggsave("Bernhard_LabelBar.png", plot = p_bar, width = 8, height = 6, dpi = 300)
+```

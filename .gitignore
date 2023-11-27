@@ -35,3 +35,7 @@ po/*~
 rsconnect/
 02-grammar_files
 .DS_Store
+09-themes_files
+col-administrative-divisions-shapefiles
+col-administrative-divisions-shapefiles.zip
+shapefiles.zip

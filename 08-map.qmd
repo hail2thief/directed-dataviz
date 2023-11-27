@@ -1,0 +1,170 @@
+---
+title: "08-maps"
+format: html
+---
+
+
+```{r setup, include=FALSE}
+# set knit options
+knitr::opts_chunk$set(
+  fig.width=9, 
+  fig.height=5, 
+  fig.retina=3,
+  fig.align="center",
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+Load libraries:
+
+```{r}
+library(tidyverse)
+library(juanr)
+library(sf)
+library(socviz)
+library(spdep)
+theme_set(theme_light())
+```
+
+
+Read data:
+
+
+```{r}
+world_map = read_sf("maps/ne_110m_admin_0_countries/ne_110m_admin_0_countries.shp")
+
+world_map
+```
+
+Spatial data is in this weird format called a `shapefile`. Shapefiles basically encode spatial objects (shapes, points, lines, etc.) in data. For our purposes, the main moving part is in `geometry`:
+
+```{r}
+world_map |> select(ADMIN, geometry)
+```
+
+
+The format of this data ideally how you always want to have spatial data. Each row is a "unit", and has an attached geometry for plotting it. It won't always be like this...
+
+
+R has great tools for working with spatial data. For plotting, the key function is `geom_sf`, or sometimes `geom_polygon()`:
+
+```{r}
+ggplot(world_map) + geom_sf()
+```
+
+
+Since our data is a tibble we can filter out stuff we don't want: 
+
+```{r}
+world_map = world_map |> 
+  filter(ISO_A3 != "ATA")
+
+
+ggplot(world_map) + geom_sf()
+```
+
+
+We can fill using other variables in our data, as normal:
+
+
+```{r}
+ggplot(world_map, aes(fill = POP_EST))  +
+  geom_sf() + 
+  scale_fill_viridis_c(option = "rocket", trans = "log") + 
+  theme_void() + 
+  theme(legend.position = "top")
+```
+
+
+Projections are just different ways of displaying the globe. We can do this with `coord_sf`:
+
+
+```{r}
+ggplot(world_map, aes(fill = POP_EST))  +
+  geom_sf() + 
+  scale_fill_viridis_c(option = "rocket", trans = "log") + 
+  coord_sf(crs = st_crs("ESRI:54030")) + 
+  theme_void() + 
+  theme(legend.position = "top")
+```
+
+
+You can zoom in using lat and long coordinates:
+
+
+```{r}
+ggplot(world_map) + geom_sf(aes(fill = GDP_MD)) +
+    coord_sf(xlim = c(-20, 45), ylim = c(30, 73), expand = FALSE) +
+    scale_fill_viridis_c(option = "mako", trans = "log")
+```
+
+```{r}
+south_america = world_map |> 
+  filter(SUBREGION == "South America") 
+
+ggplot(south_america) + geom_sf()
+
+nb = poly2nb(south_america, 
+             queen = FALSE, 
+             row.names = south_america$ADMIN)
+nb
+```
+
+
+
+
+
+## Polygon data
+
+
+
+The other way map data is stored is in this weird format below, where you get long, lat, and group. Each row here is no longer a unit, it is some kind of piece of the map (?). 
+
+
+```{r}
+map = county_map |> 
+  left_join(county_data) |> 
+  filter(state == "FL")
+
+map
+```
+
+
+
+```{r}
+map = county_map |> 
+  left_join(county_data) |> 
+  filter(state == "FL")
+
+ggplot(data = map,
+            mapping = aes(x = long, y = lat,
+                          fill = winner, 
+                          group = group)) + 
+  geom_polygon(color = "white", size = .1) + 
+  scale_fill_manual(values = c("darkblue", "darkred")) + 
+  theme_void() + 
+  theme(legend.position = "top")
+```
+
+
+
+
+
+```{r}
+map = county_map |> 
+  left_join(county_data)
+
+ggplot(data = map,
+            mapping = aes(x = long, y = lat,
+                          fill = pct_black, 
+                          group = group)) + 
+  geom_polygon(color = "white", size = .1) + 
+  theme_void() + 
+  theme(legend.position = "top")
+```
+

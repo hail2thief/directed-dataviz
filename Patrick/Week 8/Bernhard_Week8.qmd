@@ -31,7 +31,7 @@ elections$cleaned_name <- tolower(gsub(" County", "", elections$name))
 # Creating a map data frame for Pennsylvania counties
 penn_map <- map_data("county", "pennsylvania")
 
-# Merging the map data with your cleaned election data
+# Merging the map data with cleaned election data
 penn_data <- penn_map %>%
   left_join(elections, by = c("subregion" = "cleaned_name"))
 

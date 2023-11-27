@@ -1,0 +1,110 @@
+---
+title: "Bernhard_Week9"
+format: html
+editor: visual
+---
+
+## Week 9 Assignment
+
+Tasks: make a plot using a non-default color or fill scale, make one using a sequential scale, one using a discrete scale, a plot where you use the fact that geometries can have local aesthetics to highlight specific points or bars.
+
+## Loading Data
+
+```{r}
+library(juanr)
+data("elections")
+```
+
+## Plots
+
+### Non-Default Color / Continuous Scale
+
+This plot demonstrates the average household income of each county in Pennsylvania. More wealthy countries have a darker green color, while less wealthy counties are a lighter color of green. The scale provides more information regarding what the particular gradient of each county represents. This plot demonstrates a continuous scale while using a non-default color.
+
+```{r}
+library(ggplot2)
+library(maps)
+library(dplyr)
+
+# Adjusting county names in the elections dataset to match the map data format
+elections$cleaned_name <- tolower(gsub(" County", "", elections$name))
+
+# Filtering elections data for Pennsylvania
+pa_elections <- elections %>%
+  filter(state == "PA")
+
+# Creating a map data frame for Pennsylvania counties
+penn_map <- map_data("county", "pennsylvania")
+
+# Merging the map data with cleaned Pennsylvania election data
+penn_data <- penn_map %>%
+  left_join(pa_elections, by = c("subregion" = "cleaned_name"))
+
+# Creating the map
+ggplot(penn_data, aes(long, lat, group = group, fill = hh_income)) +
+  geom_polygon(color = "white") +
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen", na.value = NA) +
+  coord_fixed(1.3) +
+  labs(fill = "Household Income", title = "Household Income by County in Pennsylvania") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 5),
+        axis.title.x = element_blank(),  # Remove x-axis label
+        axis.title.y = element_blank(),  # Remove y-axis label
+        axis.text.x = element_blank(),   # Remove x-axis tick labels
+        axis.text.y = element_blank(),   # Remove y-axis tick labels
+        axis.ticks = element_blank())    # Remove all axis ticks
+
+```
+
+### Discrete Scale
+
+To illustrate what a discrete scale would look like, I decided to create a barplot that visualizes the distribution of Pennsylvania counties by the percentage that their occupants voted for a Democrat in the 2020 Election.
+
+```{r}
+# Creating categorical variable for percentage of Democratic voters
+pa_elections1 <- pa_elections %>%
+  mutate(dem_category = cut(per_dem_2020,
+                            breaks = c(0, 0.3, 0.5, 0.7, 1),
+                            labels = c("<30%", "30%-50%", "50%-70%", ">70%"),
+                            include.lowest = TRUE))
+
+# Creating bar plot with a discrete scale
+ggplot(pa_elections1, aes(x = dem_category, fill = dem_category)) +
+  geom_bar() +
+  labs(title = "Distribution of PA Counties by Percentage of Democratic Voters in 2020",
+       x = "Percentage of Democratic Voters",
+       y = "Number of Counties",
+       fill = "Voter Percentage Range") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+### Local Aesthetics
+
+The following barplot highlights counties that are deemed outliers. Outlier counties are those that have democratic vote shares below 30 percent or above 70 percent. The plot shows all countries by their population and highlights these outlier counties in red.
+
+```{r}
+
+# Categorizing counties based on the percentage of Democratic voters
+pa_elections2 <- pa_elections %>%
+  mutate(Outlier = ifelse(per_dem_2020 < 0.3 | per_dem_2020 > 0.7, "Outlier", "Normal"))
+
+# Creating a bar plot
+ggplot(pa_elections2, aes(x = reorder(name, pop), y = pop, fill = Outlier)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("Outlier" = "red", "Normal" = "grey")) +
+  coord_flip() +
+  labs(title = "Population of PA Counties with High or Low Democratic Voter Percentage",
+       x = "County",
+       y = "Population",
+       fill = "Category") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```

@@ -18,6 +18,7 @@ library(sp)
 library(sf)
 library(RColorBrewer)
 library(viridis)
+library(paletteer)
 
 set.seed(1986)
 
@@ -27,12 +28,6 @@ data("elections")
 ### make one using a sequential scale, one using a discrete scale, 
 ### a plot where you use the fact that geometries can have local aesthetics 
 ### to highlight specific points or bars
-
-#### Plot sequential scale using non-default color or fill scale ####
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(RColorBrewer)
 
 #### Plot sequential scale using non-default color or fill scale ####
 SequentialPlot <- ggplot(elections %>% 
